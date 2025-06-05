@@ -261,20 +261,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Numéro de téléphone requis" });
       }
 
-      // For real WhatsApp integration, you would need WhatsApp Business API credentials
-      // This requires WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID
-      const mockResponse = {
-        sessionId: `whatsapp_${Date.now()}`,
-        phoneNumber: phoneNumber,
-        connected: true,
-        deepfakeEnabled,
-        qrCode: method === "qr" ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" : null,
-        message: "Connexion WhatsApp simulée - Configurez les vraies API keys pour l'intégration réelle"
-      };
+      // Vérifier que les clés API sont configurées
+      const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+      const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const businessAccountId = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID;
 
-      res.json(mockResponse);
+      if (!accessToken || !phoneNumberId || !businessAccountId) {
+        return res.status(500).json({ 
+          message: "Clés API WhatsApp Business non configurées. Veuillez ajouter WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID et WHATSAPP_BUSINESS_ACCOUNT_ID dans les Secrets." 
+        });
+      }
+
+      if (method === "phone") {
+        // Vérifier le numéro avec l'API WhatsApp Business
+        try {
+          const response = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const phoneData = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(phoneData.error?.message || 'Erreur API WhatsApp');
+          }
+
+          const sessionResponse = {
+            sessionId: `whatsapp_${Date.now()}`,
+            phoneNumber: phoneData.display_phone_number || phoneNumber,
+            connected: true,
+            deepfakeEnabled,
+            businessAccountId,
+            phoneNumberId,
+            message: "Connexion WhatsApp Business réussie"
+          };
+
+          res.json(sessionResponse);
+        } catch (apiError: any) {
+          res.status(400).json({ 
+            message: `Erreur de connexion WhatsApp: ${apiError.message}` 
+          });
+        }
+      } else if (method === "qr") {
+        // Pour le QR code, générer un token de session temporaire
+        const qrResponse = {
+          sessionId: `whatsapp_qr_${Date.now()}`,
+          connected: false,
+          deepfakeEnabled,
+          qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=whatsapp://send?phone=${phoneNumberId}`,
+          message: "Code QR généré - Scannez avec WhatsApp"
+        };
+
+        res.json(qrResponse);
+      }
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   });
 
@@ -286,23 +329,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Session ID et numéro de contact requis" });
       }
 
-      // Real WhatsApp call would use WhatsApp Business API
-      const callResponse = {
-        callId: `call_${Date.now()}`,
-        status: "initiated",
-        contactNumber,
-        deepfakeActive: deepfakeSettings?.enabled || false,
-        faceModelId,
-        voiceModelId,
-        message: "Appel WhatsApp simulé - Intégration réelle nécessite les API keys WhatsApp Business"
-      };
+      const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+      const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
-      // Notify via socket for real-time updates
-      io.emit('whatsapp-call-started', callResponse);
+      if (!accessToken || !phoneNumberId) {
+        return res.status(500).json({ 
+          message: "Clés API WhatsApp Business non configurées" 
+        });
+      }
 
-      res.json(callResponse);
+      // Initier un appel vidéo via l'API WhatsApp Business
+      try {
+        const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: contactNumber.replace('+', ''),
+            type: "template",
+            template: {
+              name: "video_call_invite",
+              language: {
+                code: "fr"
+              },
+              components: [{
+                type: "body",
+                parameters: [{
+                  type: "text",
+                  text: "Appel vidéo avec fonctionnalités deepfake"
+                }]
+              }]
+            }
+          })
+        });
+
+        const whatsappData = await whatsappResponse.json();
+
+        if (!whatsappResponse.ok) {
+          throw new Error(whatsappData.error?.message || 'Erreur API WhatsApp');
+        }
+
+        const callResponse = {
+          callId: `call_${Date.now()}`,
+          whatsappMessageId: whatsappData.messages[0]?.id,
+          status: "initiated",
+          contactNumber,
+          deepfakeActive: deepfakeSettings?.enabled || false,
+          faceModelId,
+          voiceModelId,
+          message: "Invitation d'appel WhatsApp envoyée avec succès"
+        };
+
+        // Notify via socket for real-time updates
+        io.emit('whatsapp-call-started', callResponse);
+
+        res.json(callResponse);
+      } catch (apiError: any) {
+        res.status(400).json({ 
+          message: `Erreur lors de l'appel WhatsApp: ${apiError.message}` 
+        });
+      }
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   });
 
