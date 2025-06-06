@@ -266,10 +266,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
       const businessAccountId = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID;
 
+      // MODE SIMULATION - Si pas de clés API configurées
       if (!accessToken || !phoneNumberId || !businessAccountId) {
-        return res.status(500).json({ 
-          message: "Clés API WhatsApp Business non configurées. Veuillez ajouter WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID et WHATSAPP_BUSINESS_ACCOUNT_ID dans les Secrets." 
-        });
+        console.log("🎭 MODE SIMULATION WHATSAPP ACTIVÉ");
+        
+        if (method === "phone") {
+          // Simuler une connexion réussie
+          const simulationResponse = {
+            sessionId: `whatsapp_demo_${Date.now()}`,
+            phoneNumber: phoneNumber,
+            connected: true,
+            deepfakeEnabled,
+            mode: "simulation",
+            businessAccountId: "demo_account",
+            phoneNumberId: "demo_phone_id",
+            directCallEnabled: true,
+            appUrl: `${process.env.REPLIT_DEV_DOMAIN || 'localhost:5000'}/video-call-direct`,
+            message: "✅ Connexion WhatsApp simulée réussie - Mode démonstration activé"
+          };
+
+          console.log("📱 Simulation de connexion WhatsApp:", simulationResponse);
+          return res.json(simulationResponse);
+        } else if (method === "qr") {
+          // QR code de démonstration
+          const qrResponse = {
+            sessionId: `whatsapp_qr_demo_${Date.now()}`,
+            connected: false,
+            deepfakeEnabled,
+            mode: "simulation",
+            qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=whatsapp://demo-deepfake-app`,
+            message: "Code QR de démonstration généré"
+          };
+
+          console.log("📱 Simulation QR WhatsApp:", qrResponse);
+          return res.json(qrResponse);
+        }
       }
 
       if (method === "phone") {
@@ -395,8 +426,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
       const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
+      // MODE SIMULATION - Si pas de clés API configurées
+      if (!accessToken || !phoneNumberId) {
+        console.log("🎭 SIMULATION D'APPEL WHATSAPP");
+        
+        const callSessionId = `call_demo_${Date.now()}`;
+        const appUrl = `https://${process.env.REPLIT_DEV_DOMAIN || 'localhost:5000'}/video-call-direct?session=${callSessionId}&deepfake=${deepfakeSettings?.enabled || false}`;
+
+        // Simuler l'envoi du message WhatsApp
+        console.log(`📱 Message WhatsApp simulé envoyé à ${contactNumber}:`);
+        console.log(`🎥 "Invitation à un appel vidéo avec deepfake"`);
+        console.log(`🔗 Lien direct: ${appUrl}`);
+
+        // Simuler le webhook après 2 secondes
+        setTimeout(() => {
+          io.emit('whatsapp-call-started', {
+            callId: callSessionId,
+            fromNumber: contactNumber,
+            mode: "simulation"
+          });
+          console.log(`✅ Simulation: ${contactNumber} a rejoint l'appel deepfake`);
+        }, 2000);
+
+        const callResponse = {
+          callId: callSessionId,
+          whatsappMessageId: `demo_msg_${Date.now()}`,
+          status: "simulated",
+          contactNumber,
+          deepfakeActive: deepfakeSettings?.enabled || false,
+          faceModelId,
+          voiceModelId,
+          directUrl: appUrl,
+          mode: "simulation",
+          message: "📱 Appel WhatsApp simulé - Le contact peut rejoindre via le lien direct"
+        };
+
+        return res.json(callResponse);
+      }
+
       if (!accessToken || !phoneNumberId) {
         return res.status(500).json({ 
+
+message: "Clés API WhatsApp Business non configurées" 
+        });
+      }
 
 // Fonction utilitaire pour envoyer des messages WhatsApp
 async function sendWhatsAppMessage(to: string, message: string): Promise<any> {
@@ -435,10 +508,6 @@ async function sendWhatsAppMessage(to: string, message: string): Promise<any> {
     throw error;
   }
 }
-
-          message: "Clés API WhatsApp Business non configurées" 
-        });
-      }
 
       // Initier un appel vidéo direct via WhatsApp Business avec boutons interactifs
       try {
