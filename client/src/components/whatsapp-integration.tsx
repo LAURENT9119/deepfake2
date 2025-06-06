@@ -265,9 +265,14 @@ export function WhatsAppIntegration({
                     type="tel"
                     placeholder="+33 6 12 34 56 78"
                     className="flex-1"
+                    id="contactNumber"
                   />
                   <Button
-                    onClick={() => handleStartCall("+33612345678")}
+                    onClick={() => {
+                      const contactInput = document.getElementById('contactNumber') as HTMLInputElement;
+                      const contactNumber = contactInput?.value || "+33612345678";
+                      handleStartCall(contactNumber);
+                    }}
                     disabled={startWhatsAppCall.isPending}
                     className="bg-green-600 hover:bg-green-700"
                   >
@@ -281,6 +286,23 @@ export function WhatsAppIntegration({
                     )}
                   </Button>
                 </div>
+                <p className="text-xs text-slate-600">
+                  L'utilisateur recevra un message WhatsApp avec boutons pour rejoindre directement l'appel
+                </p>
+              </div>
+
+              {/* Direct Call Feature */}
+              <div className="space-y-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                <h4 className="text-sm font-semibold text-green-800 flex items-center gap-2">
+                  <Smartphone className="h-4 w-4" />
+                  Appels Directs WhatsApp
+                </h4>
+                <p className="text-xs text-green-700">
+                  • Les contacts reçoivent un message interactif
+                  • Clic direct pour rejoindre l'appel
+                  • Choix d'activer/désactiver le deepfake
+                  • Pas besoin de liens compliqués
+                </p>
               </div>
 
               {/* Status Information */}

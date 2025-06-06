@@ -288,6 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error(phoneData.error?.message || 'Erreur API WhatsApp');
           }
 
+          // Créer une session directe avec webhook pour appels entrants
           const sessionResponse = {
             sessionId: `whatsapp_${Date.now()}`,
             phoneNumber: phoneData.display_phone_number || phoneNumber,
@@ -295,7 +296,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             deepfakeEnabled,
             businessAccountId,
             phoneNumberId,
-            message: "Connexion WhatsApp Business réussie"
+            directCallEnabled: true,
+            appUrl: `${process.env.REPLIT_DEV_DOMAIN || 'localhost:5000'}/video-call-direct`,
+            message: "Connexion WhatsApp Business réussie - Appels directs activés"
           };
 
           res.json(sessionResponse);
@@ -321,6 +324,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Webhook WhatsApp pour recevoir les appels entrants
+  app.post("/api/whatsapp/webhook", async (req, res) => {
+    try {
+      const { entry } = req.body;
+      
+      if (entry && entry[0]) {
+        const changes = entry[0].changes;
+        
+        for (const change of changes) {
+          if (change.value && change.value.messages) {
+            for (const message of change.value.messages) {
+              // Détecter les appels entrants
+              if (message.type === "interactive" && message.interactive.type === "button_reply") {
+                const callType = message.interactive.button_reply.id;
+                
+                if (callType === "video_call_deepfake") {
+                  // Redirection automatique vers l'application avec deepfake
+                  const callSession = {
+                    sessionId: `direct_call_${Date.now()}`,
+                    fromNumber: message.from,
+                    deepfakeEnabled: true,
+                    callType: "incoming_video",
+                    timestamp: new Date()
+                  };
+
+                  // Notifier l'application via Socket.IO
+                  io.emit('incoming-whatsapp-call', callSession);
+
+                  // Répondre avec un message contenant le lien direct
+                  await sendWhatsAppMessage(message.from, 
+                    `🎥 Appel vidéo deepfake en cours...\n\nCliquez ici pour rejoindre: https://${process.env.REPLIT_DEV_DOMAIN}/video-call-direct?session=${callSession.sessionId}`
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+
+      res.status(200).send("OK");
+    } catch (error: any) {
+      console.error("Webhook error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Vérification du webhook WhatsApp
+  app.get("/api/whatsapp/webhook", (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+
+    if (mode === 'subscribe' && token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
+      console.log('Webhook WhatsApp vérifié');
+      res.status(200).send(challenge);
+    } else {
+      res.status(403).send('Forbidden');
+    }
+  });
+
   app.post("/api/whatsapp/start-call", async (req, res) => {
     try {
       const { sessionId, contactNumber, faceModelId, voiceModelId, deepfakeSettings } = req.body;
@@ -334,12 +397,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!accessToken || !phoneNumberId) {
         return res.status(500).json({ 
+
+// Fonction utilitaire pour envoyer des messages WhatsApp
+async function sendWhatsAppMessage(to: string, message: string): Promise<any> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!accessToken || !phoneNumberId) {
+    throw new Error("Configuration WhatsApp manquante");
+  }
+
+  try {
+    const response = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: to.replace('+', ''),
+        type: "text",
+        text: {
+          body: message
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Erreur envoi message WhatsApp');
+    }
+
+    return await response.json();
+  } catch (error: any) {
+    console.error('Erreur envoi message WhatsApp:', error);
+    throw error;
+  }
+}
+
           message: "Clés API WhatsApp Business non configurées" 
         });
       }
 
-      // Initier un appel vidéo via l'API WhatsApp Business
+      // Initier un appel vidéo direct via WhatsApp Business avec boutons interactifs
       try {
+        const callSessionId = `call_${Date.now()}`;
+        const appUrl = `https://${process.env.REPLIT_DEV_DOMAIN}/video-call-direct?session=${callSessionId}&deepfake=${deepfakeSettings?.enabled || false}`;
+
         const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
           method: 'POST',
           headers: {
@@ -349,19 +454,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           body: JSON.stringify({
             messaging_product: "whatsapp",
             to: contactNumber.replace('+', ''),
-            type: "template",
-            template: {
-              name: "video_call_invite",
-              language: {
-                code: "fr"
+            type: "interactive",
+            interactive: {
+              type: "button",
+              body: {
+                text: "🎥 Invitation à un appel vidéo avec deepfake\n\nVous pouvez choisir d'activer ou non la transformation de visage pendant l'appel."
               },
-              components: [{
-                type: "body",
-                parameters: [{
-                  type: "text",
-                  text: "Appel vidéo avec fonctionnalités deepfake"
-                }]
-              }]
+              action: {
+                buttons: [
+                  {
+                    type: "reply",
+                    reply: {
+                      id: "video_call_deepfake",
+                      title: "📹 Rejoindre l'appel"
+                    }
+                  },
+                  {
+                    type: "reply", 
+                    reply: {
+                      id: "video_call_normal",
+                      title: "📺 Appel normal"
+                    }
+                  }
+                ]
+              }
             }
           })
         });
@@ -373,14 +489,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const callResponse = {
-          callId: `call_${Date.now()}`,
+          callId: callSessionId,
           whatsappMessageId: whatsappData.messages[0]?.id,
           status: "initiated",
           contactNumber,
           deepfakeActive: deepfakeSettings?.enabled || false,
           faceModelId,
           voiceModelId,
-          message: "Invitation d'appel WhatsApp envoyée avec succès"
+          directUrl: appUrl,
+          message: "Invitation d'appel WhatsApp envoyée - L'utilisateur peut rejoindre directement"
         };
 
         // Notify via socket for real-time updates
@@ -395,6 +512,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
+  });
+
+  // Endpoint pour les appels directs depuis WhatsApp
+  app.get("/video-call-direct", (req, res) => {
+    const { session, deepfake } = req.query;
+    
+    // Servir la page d'appel vidéo avec paramètres pré-configurés
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Appel Vidéo Deepfake - WhatsApp</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
+          .container {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: #333;
+            max-width: 400px;
+            width: 90%;
+          }
+          .whatsapp-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+          }
+          .btn {
+            background: #25D366;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+          }
+          .btn:hover {
+            background: #128C7E;
+            transform: translateY(-2px);
+          }
+          .deepfake-toggle {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="whatsapp-icon">📱</div>
+          <h2>Appel Vidéo WhatsApp</h2>
+          <p>Session: ${session}</p>
+          
+          <div class="deepfake-toggle">
+            <h3>🎭 Transformation de visage</h3>
+            <label>
+              <input type="checkbox" id="deepfakeToggle" ${deepfake === 'true' ? 'checked' : ''}> 
+              Activer le deepfake
+            </label>
+          </div>
+          
+          <a href="/?session=${session}&deepfake=${deepfake}" class="btn">
+            🎥 Rejoindre l'appel maintenant
+          </a>
+          
+          <p style="font-size: 12px; color: #666; margin-top: 20px;">
+            Vous serez redirigé vers l'application de visioconférence avec deepfake
+          </p>
+        </div>
+        
+        <script>
+          // Auto-redirect après 3 secondes
+          setTimeout(() => {
+            const deepfakeEnabled = document.getElementById('deepfakeToggle').checked;
+            window.location.href = '/?session=${session}&deepfake=' + deepfakeEnabled + '&autostart=true';
+          }, 3000);
+          
+          // Mettre à jour le lien quand la checkbox change
+          document.getElementById('deepfakeToggle').addEventListener('change', function() {
+            const btn = document.querySelector('.btn');
+            btn.href = '/?session=${session}&deepfake=' + this.checked;
+          });
+        </script>
+      </body>
+      </html>
+    `);
   });
 
   app.get("/api/whatsapp/status/:sessionId", async (req, res) => {

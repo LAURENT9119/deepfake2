@@ -47,6 +47,7 @@ export default function VideoCall() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [roomId, setRoomId] = useState("");
   const [userId] = useState(Math.random().toString(36).substr(2, 9));
+  const [isFromWhatsApp, setIsFromWhatsApp] = useState(false);
   
   // Deepfake settings
   const [selectedFaceModel, setSelectedFaceModel] = useState<number | null>(null);
@@ -71,6 +72,33 @@ export default function VideoCall() {
 
   // Initialize WebRTC and Socket.IO
   useEffect(() => {
+    // Vérifier les paramètres URL pour les appels directs WhatsApp
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionParam = urlParams.get('session');
+    const deepfakeParam = urlParams.get('deepfake');
+    const autostartParam = urlParams.get('autostart');
+
+    if (sessionParam) {
+      setRoomId(sessionParam);
+      setIsFromWhatsApp(true);
+      
+      if (deepfakeParam === 'true') {
+        setDeepfakeEnabled(true);
+      }
+
+      toast({
+        title: "Appel WhatsApp détecté",
+        description: `Session: ${sessionParam.substring(0, 8)}... - Deepfake: ${deepfakeParam === 'true' ? 'Activé' : 'Désactivé'}`,
+      });
+
+      // Auto-démarrer l'appel si demandé
+      if (autostartParam === 'true') {
+        setTimeout(() => {
+          startCall();
+        }, 2000);
+      }
+    }
+
     initializeMedia();
     initializeSocket();
     
