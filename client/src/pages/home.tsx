@@ -269,10 +269,12 @@ export default function Home() {
                       Démarrer un Appel Vidéo
                     </Button>
                   </Link>
-                  <Button variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                    <Users className="h-4 w-4 mr-2" />
-                    Voir la Démo
-                  </Button>
+                  <Link href="/workspace">
+                    <Button variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                      <Users className="h-4 w-4 mr-2" />
+                      Voir la Démo
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

@@ -633,7 +633,18 @@ export default function VideoCall() {
                   <span className="text-sm font-medium">Deepfake activé</span>
                   <Switch
                     checked={deepfakeEnabled}
-                    onCheckedChange={setDeepfakeEnabled}
+                    onCheckedChange={(checked) => {
+                      setDeepfakeEnabled(checked);
+                      if (checked && selectedFaceModel) {
+                        setTimeout(() => {
+                          startFrameProcessing();
+                          toast({
+                            title: "Deepfake activé",
+                            description: "Transformation faciale appliquée",
+                          });
+                        }, 300);
+                      }
+                    }}
                   />
                 </div>
                 
@@ -660,10 +671,22 @@ export default function VideoCall() {
               onFaceModelSelected={(modelId) => {
                 setSelectedFaceModel(modelId);
                 handleFaceModelChange(modelId.toString());
+                // Activer automatiquement le deepfake si un modèle est sélectionné
+                if (!deepfakeEnabled) {
+                  setDeepfakeEnabled(true);
+                }
+                // Appliquer immédiatement la transformation
+                setTimeout(() => {
+                  startFrameProcessing();
+                }, 500);
               }}
               onVoiceModelSelected={(modelId) => {
                 setSelectedVoiceModel(modelId);
                 handleVoiceModelChange(modelId.toString());
+                // Activer automatiquement le deepfake si un modèle est sélectionné
+                if (!deepfakeEnabled) {
+                  setDeepfakeEnabled(true);
+                }
               }}
               selectedFaceModel={selectedFaceModel}
               selectedVoiceModel={selectedVoiceModel}
