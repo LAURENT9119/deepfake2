@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Video, VideoOff, Mic, MicOff, Phone, PhoneOff, 
   Settings, User, Volume2, Camera, MonitorSpeaker,
-  Palette, Lightbulb, Zap, Users, ArrowLeft, Home, UserPlus
+  Palette, Lightbulb, Zap, Users, ArrowLeft, Home, UserPlus, Eye
 } from "lucide-react";
 import io from "socket.io-client";
 import { Link } from "wouter";
@@ -638,10 +638,15 @@ export default function VideoCall() {
     const id = parseInt(modelId);
     setSelectedFaceModel(id);
     
-    // Immédiatement appliquer la transformation si deepfake est activé
-    if (deepfakeEnabled) {
-      startFrameProcessing();
+    // Activer automatiquement le deepfake et démarrer immédiatement le traitement
+    if (!deepfakeEnabled) {
+      setDeepfakeEnabled(true);
     }
+    
+    // Démarrer le traitement immédiatement
+    setTimeout(() => {
+      startFrameProcessing();
+    }, 100);
     
     if (socketRef.current && isCallActive) {
       socketRef.current.emit('face-model-changed', {
@@ -651,8 +656,8 @@ export default function VideoCall() {
     }
 
     toast({
-      title: "Modèle de visage changé",
-      description: `Nouveau visage appliqué: ${faceModels?.find(m => m.id === id)?.name}`,
+      title: "Transformation activée !",
+      description: `Visage changé en: ${faceModels?.find(m => m.id === id)?.name}`,
     });
   };
 
@@ -889,14 +894,20 @@ export default function VideoCall() {
                     checked={deepfakeEnabled}
                     onCheckedChange={(checked) => {
                       setDeepfakeEnabled(checked);
-                      if (checked && selectedFaceModel) {
+                      if (checked) {
+                        // Démarrer immédiatement même sans modèle sélectionné
                         setTimeout(() => {
                           startFrameProcessing();
                           toast({
-                            title: "Deepfake activé",
-                            description: "Transformation faciale appliquée",
+                            title: "Deepfake activé !",
+                            description: selectedFaceModel ? "Transformation faciale appliquée" : "Sélectionnez un modèle pour voir la transformation",
                           });
-                        }, 300);
+                        }, 200);
+                      } else {
+                        toast({
+                          title: "Deepfake désactivé",
+                          description: "Affichage normal restauré",
+                        });
                       }
                     }}
                   />

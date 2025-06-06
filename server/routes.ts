@@ -842,10 +842,8 @@ async function processVideoFrame(frameData: string, faceModelId?: number, voiceS
       processedFrame = await applyDeepfakeTransformation(processedFrame, faceModelId, coherenceAnalysis);
     }
 
-    // Optimized processing delay for real-time (10-15ms for 60fps)argeting 60fps)
+    // Optimized processing delay for real-time (10-15ms for 60fps targeting 60fps)
     await new Promise(resolve => setTimeout(resolve, 8));
-
-    let processedFrame = frameData;
 
     // Advanced face processing with custom models
     if (faceModelId) {

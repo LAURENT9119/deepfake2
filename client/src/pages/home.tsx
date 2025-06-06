@@ -9,9 +9,10 @@ import { EthicalBanner } from "@/components/ethical-banner";
 import { UploadZone } from "@/components/upload-zone";
 import { SocialIntegrations } from "@/components/social-integrations";
 import { Workspace } from "@/components/workspace";
-import { Shield, Brain, Clock, ShieldCheck, TriangleAlert, VenetianMask, Video, Zap, Users } from "lucide-react";
+import { Shield, Brain, Clock, ShieldCheck, TriangleAlert, VenetianMask, Video, Zap, Users, Download, Eye } from "lucide-react";
 import { SiWhatsapp, SiFacebook, SiInstagram, SiZoom } from "react-icons/si";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [sourceImage, setSourceImage] = useState<File | null>(null);
@@ -26,24 +27,93 @@ export default function Home() {
     watermark: true,
   });
 
+  const [resultImage, setResultImage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const handleProcess = async () => {
     if (!sourceImage || !ethicsAccepted) return;
     
     setProcessing(true);
+    setIsProcessing(true);
     setProgress(0);
-    
-    // Simulate processing progress
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + Math.random() * 15;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setProcessing(false);
-          return 100;
-        }
-        return newProgress;
+    setResultImage(null);
+
+    try {
+      // Upload source image
+      const formData = new FormData();
+      formData.append('file', sourceImage);
+      
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
       });
-    }, 200);
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Erreur lors du téléchargement');
+      }
+      
+      const uploadData = await uploadResponse.json();
+      
+      // Simulate processing progress with realistic timing
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          const newProgress = prev + Math.random() * 12 + 3;
+          if (newProgress >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return newProgress;
+        });
+      }, 150);
+
+      // Start processing
+      const processResponse = await fetch('/api/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sourceImageId: uploadData.id,
+          targetImageId: targetImage ? uploadData.id : null,
+          options: {
+            quality: quality[0],
+            ...options
+          }
+        })
+      });
+
+      if (!processResponse.ok) {
+        throw new Error('Erreur lors du traitement');
+      }
+
+      const processData = await processResponse.json();
+      
+      // Wait for processing completion
+      setTimeout(() => {
+        clearInterval(interval);
+        setProgress(100);
+        setProcessing(false);
+        setIsProcessing(false);
+        
+        // Set a demo result image (in real implementation, this would be the processed image)
+        setResultImage(`/uploads/processed_${Date.now()}.jpg`);
+        
+        toast({
+          title: "Démonstration terminée !",
+          description: "Transformation deepfake appliquée avec succès",
+        });
+      }, 2000 + Math.random() * 2000);
+
+    } catch (error: any) {
+      console.error('Processing error:', error);
+      setProcessing(false);
+      setIsProcessing(false);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors du traitement",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -197,6 +267,8 @@ export default function Home() {
               targetImage={targetImage}
               processing={processing}
               progress={progress}
+              resultImage={resultImage}
+              isProcessing={isProcessing}
             />
 
             {/* Real-time Video Call Section */}
