@@ -328,17 +328,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/whatsapp/webhook", async (req, res) => {
     try {
       const { entry } = req.body;
-      
+
       if (entry && entry[0]) {
         const changes = entry[0].changes;
-        
+
         for (const change of changes) {
           if (change.value && change.value.messages) {
             for (const message of change.value.messages) {
               // Détecter les appels entrants
               if (message.type === "interactive" && message.interactive.type === "button_reply") {
                 const callType = message.interactive.button_reply.id;
-                
+
                 if (callType === "video_call_deepfake") {
                   // Redirection automatique vers l'application avec deepfake
                   const callSession = {
@@ -353,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   io.emit('incoming-whatsapp-call', callSession);
 
                   // Répondre avec un message contenant le lien direct
-                  await sendWhatsAppMessage(message.from, 
+                  await (sendWhatsAppMessage)(message.from, 
                     `🎥 Appel vidéo deepfake en cours...\n\nCliquez ici pour rejoindre: https://${process.env.REPLIT_DEV_DOMAIN}/video-call-direct?session=${callSession.sessionId}`
                   );
                 }
@@ -517,7 +517,7 @@ async function sendWhatsAppMessage(to: string, message: string): Promise<any> {
   // Endpoint pour les appels directs depuis WhatsApp
   app.get("/video-call-direct", (req, res) => {
     const { session, deepfake } = req.query;
-    
+
     // Servir la page d'appel vidéo avec paramètres pré-configurés
     res.send(`
       <!DOCTYPE html>
@@ -582,7 +582,7 @@ async function sendWhatsAppMessage(to: string, message: string): Promise<any> {
           <div class="whatsapp-icon">📱</div>
           <h2>Appel Vidéo WhatsApp</h2>
           <p>Session: ${session}</p>
-          
+
           <div class="deepfake-toggle">
             <h3>🎭 Transformation de visage</h3>
             <label>
@@ -590,23 +590,23 @@ async function sendWhatsAppMessage(to: string, message: string): Promise<any> {
               Activer le deepfake
             </label>
           </div>
-          
+
           <a href="/?session=${session}&deepfake=${deepfake}" class="btn">
             🎥 Rejoindre l'appel maintenant
           </a>
-          
+
           <p style="font-size: 12px; color: #666; margin-top: 20px;">
             Vous serez redirigé vers l'application de visioconférence avec deepfake
           </p>
         </div>
-        
+
         <script>
           // Auto-redirect après 3 secondes
           setTimeout(() => {
             const deepfakeEnabled = document.getElementById('deepfakeToggle').checked;
             window.location.href = '/?session=${session}&deepfake=' + deepfakeEnabled + '&autostart=true';
           }, 3000);
-          
+
           // Mettre à jour le lien quand la checkbox change
           document.getElementById('deepfakeToggle').addEventListener('change', function() {
             const btn = document.querySelector('.btn');
