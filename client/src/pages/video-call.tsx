@@ -287,19 +287,55 @@ export default function VideoCall() {
             
             // Effet de transformation visible même sans modèle
             if (!selectedFaceModel) {
-              // Appliquer un effet de démonstration basique
+              // Appliquer un effet de démonstration plus visible
               const centerX = canvas.width / 2;
               const centerY = canvas.height / 2;
               const radius = Math.min(canvas.width, canvas.height) * 0.3;
               
-              ctx.globalAlpha = 0.3;
-              ctx.fillStyle = 'rgba(255, 100, 100, 0.2)';
+              // Effet de teinte colorée sur tout le visage
+              ctx.globalAlpha = 0.4;
+              ctx.fillStyle = `hsl(${Date.now() / 20 % 360}, 60%, 70%)`;
               ctx.beginPath();
               ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
               ctx.fill();
               
+              // Contour animé
+              ctx.globalAlpha = 1.0;
+              ctx.strokeStyle = `hsl(${Date.now() / 10 % 360}, 80%, 50%)`;
+              ctx.lineWidth = 3;
+              ctx.stroke();
+              
+              // Points de repère faciaux animés
+              ctx.fillStyle = `hsl(${Date.now() / 30 % 360}, 100%, 80%)`;
+              const pulse = Math.sin(Date.now() / 200) * 2 + 4;
+              // Yeux
+              ctx.beginPath();
+              ctx.arc(centerX - 60, centerY - 40, pulse, 0, 2 * Math.PI);
+              ctx.arc(centerX + 60, centerY - 40, pulse, 0, 2 * Math.PI);
+              ctx.fill();
+            } else {
+              // Transformation avec modèle sélectionné
+              const centerX = canvas.width / 2;
+              const centerY = canvas.height / 2;
+              const radius = Math.min(canvas.width, canvas.height) * 0.35;
+              
+              // Couleurs selon le modèle
+              const modelColors = [
+                [255, 200, 180],  // Modèle 1 - Teinte chaude
+                [200, 220, 255],  // Modèle 2 - Teinte froide
+                [220, 255, 200],  // Modèle 3 - Teinte verte
+              ];
+              const [r, g, b] = modelColors[(selectedFaceModel - 1) % modelColors.length];
+              
+              ctx.globalAlpha = faceSwapIntensity[0] / 100 * 0.6;
+              ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              // Effet de morphing du visage
               ctx.globalAlpha = 0.8;
-              ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+              ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
               ctx.lineWidth = 2;
               ctx.stroke();
             }
@@ -340,22 +376,18 @@ export default function VideoCall() {
             }
           }
           
-          // Appliquer la frame transformée à la vidéo locale si deepfake activé
-          if (deepfakeEnabled) {
-            // Rediriger la vidéo vers le canvas transformé
-            if (videoRef.current) {
-              // Créer un nouveau stream depuis le canvas
-              const stream = canvas.captureStream(30);
-              if (stream && stream.getVideoTracks().length > 0) {
-                // Remplacer le srcObject avec le stream transformé
-                videoRef.current.srcObject = stream;
-              }
-            }
-          } else {
-            // Revenir au stream original si deepfake désactivé
-            if (videoRef.current && streamRef.current) {
-              videoRef.current.srcObject = streamRef.current;
-            }
+          // Forcer l'affichage du canvas transformé par dessus la vidéo
+          if (deepfakeEnabled && canvasRef.current) {
+            canvasRef.current.style.display = 'block';
+            canvasRef.current.style.position = 'absolute';
+            canvasRef.current.style.top = '0';
+            canvasRef.current.style.left = '0';
+            canvasRef.current.style.width = '100%';
+            canvasRef.current.style.height = '100%';
+            canvasRef.current.style.zIndex = '10';
+            canvasRef.current.style.pointerEvents = 'none';
+          } else if (canvasRef.current) {
+            canvasRef.current.style.display = 'none';
           }
         }
       }
@@ -805,7 +837,11 @@ export default function VideoCall() {
                     />
                     <canvas
                       ref={canvasRef}
-                      className="hidden"
+                      className={deepfakeEnabled ? "absolute inset-0 w-full h-full object-cover" : "hidden"}
+                      style={{ 
+                        zIndex: deepfakeEnabled ? 10 : -1,
+                        pointerEvents: 'none'
+                      }}
                     />
                     <div className="absolute bottom-2 left-2 text-white text-sm bg-black bg-opacity-50 px-2 py-1 rounded">
                       Vous {deepfakeEnabled ? "(Deepfake)" : ""}
@@ -958,14 +994,14 @@ export default function VideoCall() {
                     onCheckedChange={(checked) => {
                       setDeepfakeEnabled(checked);
                       if (checked) {
-                        // Démarrer immédiatement même sans modèle sélectionné
+                        toast({
+                          title: "🎭 Deepfake activé !",
+                          description: "Transformation en cours... Votre visage va changer !",
+                        });
+                        // Démarrer immédiatement le traitement
                         setTimeout(() => {
                           startFrameProcessing();
-                          toast({
-                            title: "Deepfake activé !",
-                            description: selectedFaceModel ? "Transformation faciale appliquée" : "Sélectionnez un modèle pour voir la transformation",
-                          });
-                        }, 200);
+                        }, 100);
                       } else {
                         toast({
                           title: "Deepfake désactivé",

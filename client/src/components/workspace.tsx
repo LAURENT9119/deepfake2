@@ -3,6 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { Image, Settings } from "lucide-react";
 import { Upload, ImageIcon, Loader2, Wand2, Brain, Users, Play, Palette, Download, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface WorkspaceProps {
   sourceImage: File | null;
@@ -10,7 +11,7 @@ interface WorkspaceProps {
   processing: boolean;
   progress: number;
   isProcessing: boolean;
-  resultImage: File | null;
+  resultImage: string | null;
 }
 
 export function Workspace({ sourceImage, targetImage, processing, progress, isProcessing, resultImage }: WorkspaceProps) {
@@ -113,23 +114,23 @@ export function Workspace({ sourceImage, targetImage, processing, progress, isPr
                 <div className="space-y-3">
                   <div className="relative">
                     <img
-                      src={resultImage || (sourceImage ? URL.createObjectURL(sourceImage) : '/placeholder.jpg')}
+                      src={sourceImage ? URL.createObjectURL(sourceImage) : '/placeholder.jpg'}
                       alt="Résultat"
                       className="w-full h-48 object-cover rounded-lg border-2 border-purple-300"
                     />
                     {/* Overlay de transformation simulée */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-lg flex items-center justify-center">
-                      <div className="bg-white/90 px-3 py-1 rounded-full text-xs font-medium text-purple-700">
-                        🎭 DEEPFAKE APPLIQUÉ
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 to-blue-500/30 rounded-lg flex items-center justify-center">
+                      <div className="bg-white/95 px-4 py-2 rounded-full text-sm font-bold text-purple-700 shadow-lg">
+                        🎭 TRANSFORMATION RÉUSSIE !
                       </div>
                     </div>
-                    {resultImage && (
-                      <div className="absolute top-2 right-2">
-                        <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                          ✓ TERMINÉ
-                        </span>
-                      </div>
-                    )}
+                    <div className="absolute top-2 right-2">
+                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                        ✅ DEEPFAKE ACTIF
+                      </span>
+                    </div>
+                    {/* Effet visuel de scan */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1">
