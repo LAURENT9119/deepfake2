@@ -1,0 +1,53 @@
+~/workspace$ npm run dev
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+
+node:internal/modules/run_main:128
+    triggerUncaughtException(
+    ^
+Error [TransformError]: Transform failed with 1 error:
+/home/runner/workspace/server/routes.ts:402:15: ERROR: Expected "(" but found "sendWhatsAppMessage"
+    at failureErrorWithLog (/home/runner/workspace/node_modules/esbuild/lib/main.js:1477:15)
+    at /home/runner/workspace/node_modules/esbuild/lib/main.js:756:50
+    at responseCallbacks.<computed> (/home/runner/workspace/node_modules/esbuild/lib/main.js:623:9)
+    at handleIncomingPacket (/home/runner/workspace/node_modules/esbuild/lib/main.js:678:12)
+    at Socket.readFromStdout (/home/runner/workspace/node_modules/esbuild/lib/main.js:601:7)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+
+Node.js v20.18.1
+~/workspace$ npm build
+Unknown command: "build"
+
+
+Did you mean this?
+  npm run build # run the "build" package script
+To see a list of supported npm commands, run:
+  npm help
+~/workspace$ npm run build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+transforming (1) index.htmlBrowserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 1760 modules transformed.
+../dist/public/index.html                   0.63 kB │ gzip:   0.39 kB
+../dist/public/assets/index-uJAM9yQR.css   65.35 kB │ gzip:  11.42 kB
+../dist/public/assets/index-C0wp4LJ0.js   439.56 kB │ gzip: 138.28 kB
+✓ built in 8.57s
+✘ [ERROR] Expected "(" but found "sendWhatsAppMessage"
+
+    server/routes.ts:402:15:
+      402 │ ...on sendWhatsAppMessage(to...
+          │       ~~~~~~~~~~~~~~~~~~~
+          ╵       (
+
+1 error
