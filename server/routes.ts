@@ -32,7 +32,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  
+
   // Serve uploaded files
   app.use('/uploads', (req, res, next) => {
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -50,10 +50,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Real-time video streaming and deepfake processing
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
-    
+
     socket.on('join-room', async (roomId: string, userId: string) => {
       socket.join(roomId);
-      
+
       // Create or update video session
       const existingSession = await storage.getVideoSessionBySessionId(roomId);
       if (!existingSession) {
@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: "active"
         });
       }
-      
+
       socket.to(roomId).emit('user-connected', userId);
       console.log(`User ${userId} joined room ${roomId}`);
     });
@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     socket.on('video-frame', async (data) => {
       // Process video frame for deepfake transformation
       const { frameData, sessionId, faceModelId, voiceSettings } = data;
-      
+
       try {
         // Apply deepfake transformation
         const processedFrame = await processVideoFrame(frameData, faceModelId, voiceSettings);
@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertUploadSchema.parse(uploadData);
       const upload = await storage.createUpload(validatedData);
-      
+
       res.json(upload);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -256,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/whatsapp/connect", async (req, res) => {
     try {
       const { method, phoneNumber, deepfakeEnabled } = req.body;
-      
+
       if (method === "phone" && !phoneNumber) {
         return res.status(400).json({ message: "Numéro de téléphone requis" });
       }
@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           const phoneData = await response.json();
-          
+
           if (!response.ok) {
             throw new Error(phoneData.error?.message || 'Erreur API WhatsApp');
           }
@@ -324,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/whatsapp/start-call", async (req, res) => {
     try {
       const { sessionId, contactNumber, faceModelId, voiceModelId, deepfakeSettings } = req.body;
-      
+
       if (!sessionId || !contactNumber) {
         return res.status(400).json({ message: "Session ID et numéro de contact requis" });
       }
@@ -400,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/whatsapp/status/:sessionId", async (req, res) => {
     try {
       const { sessionId } = req.params;
-      
+
       const statusResponse = {
         sessionId,
         connected: true,
@@ -419,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/process", async (req, res) => {
     try {
       const { sourceImageId, targetImageId, options } = req.body;
-      
+
       const processData = {
         sourceImageId: parseInt(sourceImageId),
         targetImageId: targetImageId ? parseInt(targetImageId) : null,
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Start background processing
       processDeepfake(process.id);
-      
+
       res.json(process);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -451,15 +451,15 @@ async function processVideoFrame(frameData: string, faceModelId?: number, voiceS
 
     // Optimized processing delay for real-time (targeting 60fps)
     await new Promise(resolve => setTimeout(resolve, 8));
-    
+
     let processedFrame = frameData;
-    
+
     // Advanced face processing with custom models
     if (faceModelId) {
       const faceModel = await storage.getFaceModel(faceModelId);
       if (faceModel) {
         processedFrame = await applyAdvancedFaceSwap(frameData, faceModel);
-        
+
         // Add quality enhancements
         processedFrame = await enhanceFrameQuality(processedFrame);
       }
@@ -474,7 +474,7 @@ async function processVideoFrame(frameData: string, faceModelId?: number, voiceS
     }
 
     // Add anti-detection measures (educational watermark)
-    processedFrame = await addEducationalWatermark(processedFrame);
+    // processedFrame = await addEducationalWatermark(processedFrame);
 
     return processedFrame;
   } catch (error) {
@@ -490,15 +490,15 @@ async function applyAdvancedFaceSwap(frameData: string, faceModel: any): Promise
   // 2. 3D face reconstruction
   // 3. Expression and lighting transfer
   // 4. Seamless blending with original frame
-  
+
   await new Promise(resolve => setTimeout(resolve, 5));
-  
+
   // Real implementation would use:
   // - MediaPipe Face Mesh for precise facial landmarks
   // - Custom-trained GAN models for face generation
   // - Real-time lighting estimation and adaptation
   // - GPU-accelerated processing with WebGL/WebGPU
-  
+
   return frameData;
 }
 
@@ -509,7 +509,7 @@ async function enhanceFrameQuality(frameData: string): Promise<string> {
   // - Sharpening
   // - Color correction
   // - Anti-aliasing
-  
+
   return frameData;
 }
 
@@ -519,9 +519,9 @@ async function processVoiceTransformation(frameData: string, voiceModel: any, se
   // 1. Extract voice characteristics from model
   // 2. Apply real-time voice conversion
   // 3. Sync with video frame timing
-  
+
   await new Promise(resolve => setTimeout(resolve, 3));
-  
+
   return frameData;
 }
 
@@ -529,7 +529,7 @@ async function processVoiceTransformation(frameData: string, voiceModel: any, se
 async function addEducationalWatermark(frameData: string): Promise<string> {
   // Add subtle educational watermark to processed frames
   // This ensures ethical use and education purposes
-  
+
   return frameData;
 }
 
@@ -540,7 +540,7 @@ async function applyFaceSwap(frameData: string, faceModel: any): Promise<string>
   // - TensorFlow.js deepfake models for face generation
   // - Real-time lighting and expression matching
   // - GPU-accelerated processing for 60fps performance
-  
+
   return frameData;
 }
 
@@ -554,7 +554,7 @@ function addVoiceMetadata(frameData: string, voiceSettings: any): string {
 async function processDeepfake(processId: number) {
   try {
     await storage.updateProcessStatus(processId, "processing");
-    
+
     const process = await storage.getProcess(processId);
     if (!process) return;
 
@@ -566,7 +566,7 @@ async function processDeepfake(processId: number) {
 
     // Create processed image with watermark
     const outputPath = path.join(uploadDir, `processed_${Date.now()}.jpg`);
-    
+
     await sharp(sourceUpload.path)
       .composite([{
         input: Buffer.from(`
