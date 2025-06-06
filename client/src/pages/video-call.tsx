@@ -16,6 +16,7 @@ import {
 import io from "socket.io-client";
 import { Link } from "wouter";
 import { WhatsAppIntegration } from "@/components/whatsapp-integration";
+import { ModelManager } from "@/components/model-manager";
 
 interface FaceModel {
   id: number;
@@ -518,33 +519,31 @@ export default function VideoCall() {
               </CardContent>
             </Card>
 
-            {/* Face Models */}
+            {/* Model Manager */}
+            <ModelManager
+              onFaceModelSelected={(modelId) => {
+                setSelectedFaceModel(modelId);
+                handleFaceModelChange(modelId.toString());
+              }}
+              onVoiceModelSelected={(modelId) => {
+                setSelectedVoiceModel(modelId);
+                handleVoiceModelChange(modelId.toString());
+              }}
+              selectedFaceModel={selectedFaceModel}
+              selectedVoiceModel={selectedVoiceModel}
+            />
+
+            {/* Transformation Intensity */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Modèles de Visage
+                  <Settings className="h-5 w-5" />
+                  Intensité de Transformation
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Select onValueChange={handleFaceModelChange} disabled={!deepfakeEnabled}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un visage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {faceModels?.map((model) => (
-                      <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name} 
-                        {model.category === "celebrity" && (
-                          <Badge variant="outline" className="ml-2">Célébrité</Badge>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
                 <div className="space-y-2">
-                  <span className="text-sm font-medium">Intensité du changement</span>
+                  <span className="text-sm font-medium">Changement de visage</span>
                   <Slider
                     value={faceSwapIntensity}
                     onValueChange={setFaceSwapIntensity}
@@ -555,34 +554,9 @@ export default function VideoCall() {
                   />
                   <div className="text-xs text-slate-500">{faceSwapIntensity[0]}%</div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Voice Models */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Volume2 className="h-5 w-5" />
-                  Modèles de Voix
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Select onValueChange={handleVoiceModelChange} disabled={!deepfakeEnabled}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir une voix" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voiceModels?.map((model) => (
-                      <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name}
-                        <Badge variant="outline" className="ml-2">{model.language}</Badge>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
 
                 <div className="space-y-2">
-                  <span className="text-sm font-medium">Intensité vocale</span>
+                  <span className="text-sm font-medium">Changement de voix</span>
                   <Slider
                     value={voiceChangeIntensity}
                     onValueChange={setVoiceChangeIntensity}

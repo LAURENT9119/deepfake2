@@ -209,6 +209,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.voiceModels.values()).filter(m => m.isPublic);
   }
 
+  async getPublicVoiceModels(): Promise<VoiceModel[]> {
+    return Array.from(this.voiceModels.values()).filter(m => m.isPublic);
+  }
+
   // Initialize with celebrity models for demonstration
   private initializeCelebrityModels() {
     // Create mock celebrity face models
