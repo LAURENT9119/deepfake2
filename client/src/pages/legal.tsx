@@ -262,3 +262,165 @@ export default function Legal() {
     </div>
   );
 }
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Shield, AlertTriangle, Scale, FileText } from "lucide-react";
+import { Link } from "wouter";
+
+export default function Legal() {
+  return (
+    <div className="min-h-screen bg-slate-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">Informations Légales</h1>
+          <p className="text-slate-600">
+            Conditions d'utilisation, politique de confidentialité et cadre légal
+          </p>
+        </div>
+
+        {/* Avertissement Important */}
+        <Card className="mb-6 border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <AlertTriangle className="h-5 w-5" />
+              Avertissement Important
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-orange-700">
+            <p>
+              Cette plateforme est destinée exclusivement à des fins éducatives et de recherche. 
+              L'utilisation malveillante de la technologie deepfake est strictement interdite et 
+              peut être passible de poursuites judiciaires.
+            </p>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Conditions d'Utilisation */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Conditions d'Utilisation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3 text-sm">
+                <h4 className="font-semibold">Usage Autorisé</h4>
+                <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <li>Recherche académique et éducative</li>
+                  <li>Démonstrations techniques</li>
+                  <li>Sensibilisation aux deepfakes</li>
+                  <li>Tests de détection</li>
+                </ul>
+                
+                <h4 className="font-semibold">Usage Interdit</h4>
+                <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <li>Création de contenu trompeur</li>
+                  <li>Usurpation d'identité</li>
+                  <li>Contenu à caractère pornographique</li>
+                  <li>Diffamation ou harcèlement</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Politique de Confidentialité */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Politique de Confidentialité
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3 text-sm">
+                <h4 className="font-semibold">Données Collectées</h4>
+                <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <li>Images téléchargées (temporaire)</li>
+                  <li>Métadonnées de session</li>
+                  <li>Logs d'utilisation (anonymes)</li>
+                </ul>
+                
+                <h4 className="font-semibold">Protection des Données</h4>
+                <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <li>Chiffrement de bout en bout</li>
+                  <li>Suppression automatique après 24h</li>
+                  <li>Aucun stockage biométrique</li>
+                  <li>Conformité RGPD</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Cadre Légal */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Scale className="h-5 w-5" />
+              Cadre Légal Applicable
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <h4 className="font-semibold">Législation Française</h4>
+                <ul className="text-sm space-y-1 text-slate-600">
+                  <li>• Loi Informatique et Libertés</li>
+                  <li>• Code Pénal (Art. 226-8)</li>
+                  <li>• Droit à l'image</li>
+                  <li>• RGPD</li>
+                </ul>
+              </div>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Sanctions Encourues</h4>
+                <ul className="text-sm space-y-1 text-slate-600">
+                  <li>• Usurpation d'identité: 1 an + 15k€</li>
+                  <li>• Atteinte à la vie privée: 1 an + 45k€</li>
+                  <li>• Diffamation: 12k€ d'amende</li>
+                  <li>• Revenge porn: 2 ans + 60k€</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Responsabilités */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Responsabilités</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 text-sm">
+              <div>
+                <h4 className="font-semibold mb-2">Responsabilité de l'Utilisateur</h4>
+                <p className="text-slate-600">
+                  L'utilisateur s'engage à utiliser cette plateforme de manière éthique et légale. 
+                  Il est seul responsable du contenu qu'il génère et de l'usage qu'il en fait.
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold mb-2">Responsabilité de la Plateforme</h4>
+                <p className="text-slate-600">
+                  Cette plateforme fournit des outils éducatifs et n'est pas responsable de l'usage 
+                  malveillant qui pourrait en être fait. Nous nous réservons le droit de suspendre 
+                  tout compte en cas d'usage non conforme.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-8 text-center">
+          <Link href="/">
+            <Button variant="outline">
+              Retour à l'accueil
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

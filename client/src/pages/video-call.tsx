@@ -733,15 +733,36 @@ export default function VideoCall() {
     const id = parseInt(modelId);
     setSelectedFaceModel(id);
     
-    // Activer automatiquement le deepfake et démarrer immédiatement le traitement
-    if (!deepfakeEnabled) {
-      setDeepfakeEnabled(true);
-    }
+    // Activer automatiquement le deepfake
+    setDeepfakeEnabled(true);
     
-    // Démarrer le traitement immédiatement
+    // Forcer le redémarrage du traitement avec effet immédiat
     setTimeout(() => {
       startFrameProcessing();
-    }, 100);
+      
+      // Effet visuel immédiat pour confirmer l'activation
+      if (canvasRef.current && videoRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          canvas.style.display = 'block';
+          canvas.style.position = 'absolute';
+          canvas.style.top = '0';
+          canvas.style.left = '0';
+          canvas.style.width = '100%';
+          canvas.style.height = '100%';
+          canvas.style.zIndex = '10';
+          canvas.style.pointerEvents = 'none';
+          
+          // Effet flash pour confirmer l'activation
+          ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          setTimeout(() => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }, 200);
+        }
+      }
+    }, 50);
     
     if (socketRef.current && isCallActive) {
       socketRef.current.emit('face-model-changed', {
@@ -751,8 +772,8 @@ export default function VideoCall() {
     }
 
     toast({
-      title: "Transformation activée !",
-      description: `Visage changé en: ${faceModels?.find(m => m.id === id)?.name}`,
+      title: "🎭 Transformation ACTIVÉE !",
+      description: `Visage transformé en: ${faceModels?.find(m => m.id === id)?.name}`,
     });
   };
 
@@ -995,18 +1016,36 @@ export default function VideoCall() {
                       setDeepfakeEnabled(checked);
                       if (checked) {
                         toast({
-                          title: "🎭 Deepfake activé !",
-                          description: "Transformation en cours... Votre visage va changer !",
+                          title: "🎭 Deepfake ACTIVÉ !",
+                          description: "Transformation IMMÉDIATE ! Regardez votre vidéo !",
                         });
-                        // Démarrer immédiatement le traitement
+                        
+                        // Effet immédiat et visible
                         setTimeout(() => {
                           startFrameProcessing();
-                        }, 100);
+                          
+                          // Flash vert pour confirmer l'activation
+                          if (canvasRef.current) {
+                            const canvas = canvasRef.current;
+                            const ctx = canvas.getContext('2d');
+                            canvas.style.display = 'block';
+                            if (ctx) {
+                              ctx.fillStyle = 'rgba(0, 255, 100, 0.4)';
+                              ctx.fillRect(0, 0, canvas.width, canvas.height);
+                              setTimeout(() => {
+                                startFrameProcessing();
+                              }, 300);
+                            }
+                          }
+                        }, 50);
                       } else {
                         toast({
                           title: "Deepfake désactivé",
                           description: "Affichage normal restauré",
                         });
+                        if (canvasRef.current) {
+                          canvasRef.current.style.display = 'none';
+                        }
                       }
                     }}
                   />
