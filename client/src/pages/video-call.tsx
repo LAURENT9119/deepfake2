@@ -384,6 +384,11 @@ export default function VideoCall() {
     const id = parseInt(modelId);
     setSelectedFaceModel(id);
     
+    // Immédiatement appliquer la transformation si deepfake est activé
+    if (deepfakeEnabled) {
+      startFrameProcessing();
+    }
+    
     if (socketRef.current && isCallActive) {
       socketRef.current.emit('face-model-changed', {
         roomId,

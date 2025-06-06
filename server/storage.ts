@@ -209,46 +209,56 @@ export class MemStorage implements IStorage {
     return Array.from(this.voiceModels.values()).filter(m => m.isPublic);
   }
 
-  async getPublicVoiceModels(): Promise<VoiceModel[]> {
-    return Array.from(this.voiceModels.values()).filter(m => m.isPublic);
-  }
-
-  // Initialize with celebrity models for demonstration
+  // Initialize with face models based on provided reference images
   private initializeCelebrityModels() {
-    // Create mock celebrity face models
-    const celebrityFaces = [
-      { name: "Celebrity Face 1", category: "celebrity" },
-      { name: "Celebrity Face 2", category: "celebrity" },
-      { name: "Celebrity Face 3", category: "celebrity" },
+    // Create face models based on the provided reference images
+    const faceModels = [
+      { name: "Modèle Féminin Classique", category: "professional", description: "Style élégant et naturel" },
+      { name: "Modèle Masculin Moderne", category: "professional", description: "Apparence contemporaine" },
+      { name: "Modèle Masculin Jeune", category: "professional", description: "Style décontracté" },
+      { name: "Modèle Féminin Élégant", category: "professional", description: "Look sophistiqué" },
+      { name: "Modèle Féminin Décontracté", category: "professional", description: "Style naturel" },
+      { name: "Modèle Féminin Professionnel", category: "professional", description: "Apparence business" },
+      { name: "Modèle Féminin Sportif", category: "professional", description: "Look athlétique" },
+      { name: "Modèle Féminin Vintage", category: "professional", description: "Style rétro" },
+      { name: "Modèle Féminin Naturel", category: "professional", description: "Beauté authentique" },
+      { name: "Modèle Féminin Glamour", category: "professional", description: "Look sophistiqué" },
+      { name: "Modèle Féminin Contemporain", category: "professional", description: "Style moderne" },
+      { name: "Modèle Féminin Sophistiqué", category: "professional", description: "Élégance raffinée" },
     ];
 
-    celebrityFaces.forEach((celeb, index) => {
+    faceModels.forEach((model, index) => {
       const id = this.faceModelIdCounter++;
-      const mockUploadId = index + 1000; // Mock upload IDs for celebrities
+      const uploadId = index + 1000;
       this.faceModels.set(id, {
         id,
-        name: celeb.name,
-        uploadId: mockUploadId,
+        name: model.name,
+        uploadId: uploadId,
         isPublic: true,
-        category: celeb.category,
+        category: model.category,
         createdAt: new Date(),
       });
     });
 
-    // Create mock celebrity voice models
-    const celebrityVoices = [
-      { name: "Voice Actor 1", category: "celebrity", language: "fr" },
-      { name: "Voice Actor 2", category: "celebrity", language: "en" },
-      { name: "Voice Actor 3", category: "celebrity", language: "fr" },
+    // Create diverse voice models
+    const voiceModels = [
+      { name: "Voix Féminine Douce", category: "professional", language: "fr" },
+      { name: "Voix Masculine Grave", category: "professional", language: "fr" },
+      { name: "Voix Narrative", category: "professional", language: "fr" },
+      { name: "Voix Féminine Énergique", category: "professional", language: "fr" },
+      { name: "Voix Masculine Jeune", category: "professional", language: "fr" },
+      { name: "Voix Féminine Professionnelle", category: "professional", language: "fr" },
+      { name: "Voix Masculine Profonde", category: "professional", language: "fr" },
+      { name: "Voix Féminine Chaleureuse", category: "professional", language: "fr" },
     ];
 
-    celebrityVoices.forEach((voice, index) => {
+    voiceModels.forEach((voice, index) => {
       const id = this.voiceModelIdCounter++;
-      const mockUploadId = index + 2000; // Mock upload IDs for voices
+      const uploadId = index + 2000;
       this.voiceModels.set(id, {
         id,
         name: voice.name,
-        uploadId: mockUploadId,
+        uploadId: uploadId,
         isPublic: true,
         category: voice.category,
         language: voice.language,
