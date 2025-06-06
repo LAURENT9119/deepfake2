@@ -187,7 +187,7 @@ export default function VideoCall() {
       // Setup peer connection
       setupPeerConnection();
 
-      // Start real-time processing automatiquement
+      // Start real-time processing automatically
       setTimeout(() => {
         startFrameProcessing();
       }, 1000);
@@ -255,12 +255,18 @@ export default function VideoCall() {
 
           // Appliquer le deepfake immédiatement si activé
           if (deepfakeEnabled) {
+            // Appliquer transformation immédiate pour feedback visuel
+              applyBasicDeepfakeEffect(ctx, canvas.width, canvas.height);
+              const transformAlpha = faceSwapIntensity[0] / 100;
+
+              const faceRegions = detectFaceRegions(canvas.width, canvas.height);
+
             // Effet de transformation IMMÉDIAT et VISIBLE
             applyImmediateDeepfakeTransformation(ctx, canvas.width, canvas.height);
 
             // Détecter et transformer les régions de visage
-            const faceRegions = detectFaceRegions(canvas.width, canvas.height);
-            const transformAlpha = faceSwapIntensity[0] / 100;
+            
+            
 
             faceRegions.forEach(region => {
               applyVisibleFaceTransformation(ctx, region, transformAlpha, selectedFaceModel);
