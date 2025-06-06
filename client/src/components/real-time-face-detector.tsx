@@ -164,15 +164,28 @@ export function RealTimeFaceDetector({
       const result = await FaceUtils.detectFacesFromVideo(video);
       setAiDetectionResult(result);
       
-      // Convertir les résultats IA au format attendu
-      const faces: FaceDetection[] = result.faces.map((face, index) => ({
-        x: face.x,
-        y: face.y,
-        width: face.width,
-        height: face.height,
-        confidence: result.confidence,
-        landmarks: result.landmarks[index]?.keypoints.map(kp => [kp.x, kp.y]) || []
-      }));
+      // Convertir les résultats IA au format attendu avec caractéristiques détaillées
+      const faces: FaceDetection[] = result.faces.map((face, index) => {
+        const landmark = result.landmarks[index];
+        return {
+          x: face.x,
+          y: face.y,
+          width: face.width,
+          height: face.height,
+          confidence: result.confidence,
+          landmarks: landmark?.keypoints.map(kp => [kp.x, kp.y]) || [],
+          features: landmark?.features, // Nouvelles caractéristiques détaillées
+          blinkState: {
+            left: landmark?.features.leftEye.blinkState || 0,
+            right: landmark?.features.rightEye.blinkState || 0
+          },
+          mouthState: {
+            openness: landmark?.features.mouth.openness || 0,
+            movement: landmark?.features.mouth.lipMovement || 'neutral'
+          },
+          lighting: landmark?.features.lighting
+        };
+      });
 
       return faces;
     } catch (error) {
@@ -210,25 +223,98 @@ export function RealTimeFaceDetector({
   };
 
   const applyFaceTransformation = (ctx: CanvasRenderingContext2D, faces: FaceDetection[], model: any) => {
-    // Advanced face transformation simulation
+    // Transformation deepfake avancée avec caractéristiques précises
     faces.forEach(face => {
       ctx.save();
       
-      // Apply face model transformation
-      const faceRegion = ctx.getImageData(face.x, face.y, face.width, face.height);
+      // Appliquer la transformation du modèle de visage avec IA
+      if (face.features) {
+        FaceUtils.applyRealTimeDeepfake(ctx, [{ 
+          keypoints: face.landmarks?.map(([x, y]) => ({ x, y })) || [],
+          box: { x: face.x, y: face.y, width: face.width, height: face.height },
+          features: face.features,
+          confidence: face.confidence
+        }], model, {
+          enableBlinkStabilization: true,
+          enableLightingAdaptation: lightingCompensation,
+          enableLipSync: true,
+          transformationIntensity: 0.8
+        });
+      }
       
-      // Simulate deepfake blending
-      ctx.globalAlpha = 0.8;
-      ctx.fillStyle = `rgba(${Math.floor(Math.random() * 50) + 200}, ${Math.floor(Math.random() * 50) + 180}, ${Math.floor(Math.random() * 50) + 170}, 0.1)`;
-      ctx.fillRect(face.x, face.y, face.width, face.height);
+      // Amélioration spécifique des yeux avec stabilisation des clignements
+      if (face.blinkState) {
+        // Dessiner les yeux stabilisés
+        const leftEyeAlpha = Math.max(0.1, 1 - face.blinkState.left);
+        const rightEyeAlpha = Math.max(0.1, 1 - face.blinkState.right);
+        
+        ctx.globalAlpha = leftEyeAlpha;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(face.x + face.width * 0.25, face.y + face.height * 0.35, face.width * 0.15, face.height * 0.1);
+        
+        ctx.globalAlpha = rightEyeAlpha;
+        ctx.fillRect(face.x + face.width * 0.6, face.y + face.height * 0.35, face.width * 0.15, face.height * 0.1);
+      }
       
-      // Add educational watermark
-      ctx.globalAlpha = 0.7;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.fillRect(face.x, face.y, 200, 25);
-      ctx.fillStyle = 'white';
-      ctx.font = '12px Arial';
-      ctx.fillText('DEEPFAKE - DÉMO', face.x + 5, face.y + 17);
+      // Amélioration de la bouche avec synchronisation labiale
+      if (face.mouthState) {
+        ctx.globalAlpha = 0.6;
+        const mouthY = face.y + face.height * 0.7;
+        const mouthWidth = face.width * 0.3 * (1 + face.mouthState.openness * 0.5);
+        const mouthHeight = face.height * 0.05 * (1 + face.mouthState.openness * 2);
+        
+        // Couleur en fonction du mouvement
+        let mouthColor = 'rgba(200, 100, 100, 0.3)';
+        if (face.mouthState.movement === 'talking') {
+          mouthColor = 'rgba(100, 200, 100, 0.4)';
+        } else if (face.mouthState.movement === 'smiling') {
+          mouthColor = 'rgba(100, 100, 200, 0.4)';
+        }
+        
+        ctx.fillStyle = mouthColor;
+        ctx.fillRect(
+          face.x + face.width * 0.35,
+          mouthY,
+          mouthWidth,
+          mouthHeight
+        );
+      }
+      
+      // Adaptation de l'éclairage en temps réel
+      if (face.lighting && lightingCompensation) {
+        const gradient = ctx.createRadialGradient(
+          face.x + face.width * 0.5,
+          face.y + face.height * 0.3,
+          0,
+          face.x + face.width * 0.5,
+          face.y + face.height * 0.3,
+          face.width * 0.8
+        );
+        
+        gradient.addColorStop(0, `rgba(${face.lighting.color.r}, ${face.lighting.color.g}, ${face.lighting.color.b}, ${face.lighting.intensity * 0.1})`);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.05)');
+        
+        ctx.fillStyle = gradient;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(face.x, face.y, face.width, face.height);
+      }
+      
+      // Filigrane éducatif amélioré
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+      ctx.fillRect(face.x, face.y, 180, 25);
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText('🤖 IA TEMPS RÉEL ACTIVÉE', face.x + 5, face.y + 17);
+      
+      // Indicateur de performance
+      if (aiDetectionResult?.frameRate) {
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.7)';
+        ctx.fillRect(face.x, face.y + 30, 100, 20);
+        ctx.fillStyle = 'white';
+        ctx.font = '10px Arial';
+        ctx.fillText(`${Math.round(aiDetectionResult.frameRate)} FPS`, face.x + 5, face.y + 43);
+      }
       
       ctx.restore();
     });
