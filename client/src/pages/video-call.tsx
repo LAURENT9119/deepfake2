@@ -265,8 +265,8 @@ export default function VideoCall() {
             applyImmediateDeepfakeTransformation(ctx, canvas.width, canvas.height);
 
             // Détecter et transformer les régions de visage
-            
-            
+
+
 
             faceRegions.forEach(region => {
               applyVisibleFaceTransformation(ctx, region, transformAlpha, selectedFaceModel);

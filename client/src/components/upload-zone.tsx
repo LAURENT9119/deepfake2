@@ -19,11 +19,11 @@ export function UploadZone({
   icon = "upload",
   type = "both"
 }: UploadZoneProps) {
-  
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  
+
   const validateFile = (file: File): { valid: boolean; type: 'image' | 'audio' | null; error?: string } => {
     // Validation pour les images
     if (file.type.startsWith('image/')) {
@@ -36,7 +36,7 @@ export function UploadZone({
       }
       return { valid: true, type: 'image' };
     }
-    
+
     // Validation pour l'audio
     if (file.type.startsWith('audio/')) {
       const supportedAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/mp4', 'audio/m4a', 'audio/ogg'];
@@ -48,7 +48,7 @@ export function UploadZone({
       }
       return { valid: true, type: 'audio' };
     }
-    
+
     return { valid: false, type: null, error: 'Type de fichier non supporté.' };
   };
 
@@ -58,7 +58,7 @@ export function UploadZone({
 
     setUploadError(null);
     const validation = validateFile(file);
-    
+
     if (!validation.valid) {
       setUploadError(validation.error || 'Fichier invalide');
       return;
@@ -67,7 +67,7 @@ export function UploadZone({
     if (validation.type && (type === 'both' || type === validation.type)) {
       setIsUploading(true);
       setUploadProgress(0);
-      
+
       // Simuler progression d'upload
       const interval = setInterval(() => {
         setUploadProgress(prev => {
@@ -92,7 +92,7 @@ export function UploadZone({
 
     setUploadError(null);
     const validation = validateFile(file);
-    
+
     if (!validation.valid) {
       setUploadError(validation.error || 'Fichier invalide');
       return;
@@ -101,7 +101,7 @@ export function UploadZone({
     if (validation.type && (type === 'both' || type === validation.type)) {
       setIsUploading(true);
       setUploadProgress(0);
-      
+
       // Simuler progression d'upload
       const interval = setInterval(() => {
         setUploadProgress(prev => {
@@ -162,17 +162,17 @@ export function UploadZone({
             </>
           )}
         </div>
-        
+
         <p className="text-sm text-slate-600 font-medium">{placeholder}</p>
         <p className="text-xs text-slate-500 mt-2">{subtext}</p>
-        
+
         {type === 'both' && (
           <div className="mt-3 text-xs text-slate-400">
             <span className="inline-block bg-slate-100 px-2 py-1 rounded mr-2">Photos: JPG, PNG, WebP</span>
             <span className="inline-block bg-slate-100 px-2 py-1 rounded">Audio: MP3, WAV, M4A</span>
           </div>
         )}
-        
+
         <input
           id={inputId}
           type="file"
@@ -181,14 +181,14 @@ export function UploadZone({
           className="hidden"
         />
       </div>
-      
+
       {isUploading && (
         <div className="space-y-2">
           <Progress value={uploadProgress} className="h-2" />
           <p className="text-xs text-slate-500 text-center">Upload en cours... {uploadProgress}%</p>
         </div>
       )}
-      
+
       {uploadError && (
         <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
           {uploadError}

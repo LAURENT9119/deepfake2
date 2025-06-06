@@ -10,25 +10,25 @@ export interface IStorage {
   createUpload(upload: InsertUpload): Promise<Upload>;
   getUpload(id: number): Promise<Upload | undefined>;
   getAllUploads(): Promise<Upload[]>;
-  
+
   // Process operations
   createProcess(process: InsertProcess): Promise<Process>;
   getProcess(id: number): Promise<Process | undefined>;
   updateProcessStatus(id: number, status: string, resultPath?: string): Promise<Process | undefined>;
   getAllProcesses(): Promise<Process[]>;
-  
+
   // Video session operations
   createVideoSession(session: InsertVideoSession): Promise<VideoSession>;
   getVideoSession(id: number): Promise<VideoSession | undefined>;
   getVideoSessionBySessionId(sessionId: string): Promise<VideoSession | undefined>;
   updateVideoSession(id: number, updates: Partial<VideoSession>): Promise<VideoSession | undefined>;
-  
+
   // Face model operations
   createFaceModel(model: InsertFaceModel): Promise<FaceModel>;
   getFaceModel(id: number): Promise<FaceModel | undefined>;
   getAllFaceModels(): Promise<FaceModel[]>;
   getPublicFaceModels(): Promise<FaceModel[]>;
-  
+
   // Voice model operations
   createVoiceModel(model: InsertVoiceModel): Promise<VoiceModel>;
   getVoiceModel(id: number): Promise<VoiceModel | undefined>;
@@ -111,7 +111,7 @@ export class MemStorage implements IStorage {
       resultPath: resultPath || process.resultPath,
       completedAt: status === "completed" || status === "failed" ? new Date() : process.completedAt,
     };
-    
+
     this.processes.set(id, updatedProcess);
     return updatedProcess;
   }
@@ -148,7 +148,7 @@ export class MemStorage implements IStorage {
   async updateVideoSession(id: number, updates: Partial<VideoSession>): Promise<VideoSession | undefined> {
     const session = this.videoSessions.get(id);
     if (!session) return undefined;
-    
+
     const updatedSession: VideoSession = { ...session, ...updates };
     this.videoSessions.set(id, updatedSession);
     return updatedSession;

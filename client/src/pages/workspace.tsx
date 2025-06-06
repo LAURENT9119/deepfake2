@@ -71,26 +71,78 @@ export default function Workspace() {
             clearInterval(interval);
             setProcessing(false);
             
-            // Créer un URL factice pour le résultat
+            // Créer un résultat deepfake réaliste
             const canvas = document.createElement('canvas');
-            canvas.width = 400;
-            canvas.height = 400;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.fillStyle = '#f0f0f0';
-              ctx.fillRect(0, 0, 400, 400);
-              ctx.fillStyle = '#333';
-              ctx.font = '16px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText('RÉSULTAT DEEPFAKE', 200, 180);
-              ctx.fillText('ÉDUCATIF - DÉMONSTRATION', 200, 220);
-            }
-            
-            canvas.toBlob((blob) => {
-              if (blob) {
-                setResult(URL.createObjectURL(blob));
+            const img = new Image();
+            img.onload = () => {
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              
+              if (ctx) {
+                // Dessiner l'image originale
+                ctx.drawImage(img, 0, 0);
+                
+                // Appliquer un effet deepfake visible
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // Simuler une transformation de visage
+                for (let i = 0; i < data.length; i += 4) {
+                  const y = Math.floor(i / 4 / canvas.width);
+                  const x = (i / 4) % canvas.width;
+                  
+                  // Zone du visage (approximative)
+                  if (y > canvas.height * 0.2 && y < canvas.height * 0.8 &&
+                      x > canvas.width * 0.2 && x < canvas.width * 0.8) {
+                    
+                    // Modifier la couleur de peau selon le modèle sélectionné
+                    if (faceModel === 1) {
+                      data[i] = Math.min(255, data[i] * 1.1);     // Rouge +
+                      data[i + 1] = Math.min(255, data[i + 1] * 1.05); // Vert +
+                      data[i + 2] = Math.min(255, data[i + 2] * 0.95); // Bleu -
+                    } else if (faceModel === 2) {
+                      data[i] = Math.min(255, data[i] * 0.95);     // Rouge -
+                      data[i + 1] = Math.min(255, data[i + 1] * 1.1); // Vert +
+                      data[i + 2] = Math.min(255, data[i + 2] * 1.05); // Bleu +
+                    }
+                  }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                
+                // Ajouter des marqueurs de transformation
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
+                ctx.lineWidth = 2;
+                
+                // Contour du visage transformé
+                ctx.beginPath();
+                ctx.ellipse(canvas.width * 0.5, canvas.height * 0.45, 
+                           canvas.width * 0.25, canvas.height * 0.3, 0, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // Points de référence
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+                ctx.fillRect(canvas.width * 0.4, canvas.height * 0.35, 4, 4); // Œil gauche
+                ctx.fillRect(canvas.width * 0.6, canvas.height * 0.35, 4, 4); // Œil droit
+                ctx.fillRect(canvas.width * 0.5, canvas.height * 0.55, 4, 4); // Bouche
+                
+                // Filigrane
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(10, canvas.height - 40, 300, 30);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('DEEPFAKE APPLIQUÉ - ÉDUCATIF', 15, canvas.height - 20);
+                
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    setResult(URL.createObjectURL(blob));
+                  }
+                });
               }
-            });
+            };
+            img.src = URL.createObjectURL(sourceImage!);
             
             toast({
               title: "Traitement terminé",
