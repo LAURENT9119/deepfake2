@@ -320,26 +320,26 @@ export default function Home() {
                   Ressources éducatives
                 </h2>
                 <div className="space-y-3">
-                  <a href="#" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
+                  <Link href="/tutorials" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
                     <h3 className="font-medium text-slate-900 text-sm">
                       Comment fonctionnent les DeepFakes?
                     </h3>
                     <p className="text-xs text-slate-600 mt-1">Guide technique complet</p>
-                  </a>
+                  </Link>
                   
-                  <a href="#" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
+                  <Link href="/tutorials" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
                     <h3 className="font-medium text-slate-900 text-sm">
                       Détecter les DeepFakes
                     </h3>
                     <p className="text-xs text-slate-600 mt-1">Outils et techniques</p>
-                  </a>
+                  </Link>
                   
-                  <a href="#" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
+                  <Link href="/ethics" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
                     <h3 className="font-medium text-slate-900 text-sm">
                       Implications éthiques
                     </h3>
                     <p className="text-xs text-slate-600 mt-1">Discussion et réflexions</p>
-                  </a>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

@@ -10,6 +10,7 @@ import Tutorials from "@/pages/tutorials";
 import Ethics from "@/pages/ethics";
 import Legal from "@/pages/legal";
 import Support from "@/pages/support";
+import Resources from "@/pages/resources";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/ethics" component={Ethics} />
       <Route path="/legal" component={Legal} />
       <Route path="/support" component={Support} />
+      <Route path="/resources" component={Resources} />
       <Route component={NotFound} />
     </Switch>
   );
