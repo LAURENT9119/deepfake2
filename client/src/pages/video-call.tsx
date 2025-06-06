@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -11,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Video, VideoOff, Mic, MicOff, Phone, PhoneOff, 
   Settings, User, Volume2, Camera, MonitorSpeaker,
-  Palette, Lightbulb, Zap, Users, ArrowLeft, Home
+  Palette, Lightbulb, Zap, Users, ArrowLeft, Home, UserPlus
 } from "lucide-react";
 import io from "socket.io-client";
 import { Link } from "wouter";
@@ -46,6 +48,7 @@ export default function VideoCall() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isCallActive, setIsCallActive] = useState(false);
   const [roomId, setRoomId] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [userId] = useState(Math.random().toString(36).substr(2, 9));
   const [isFromWhatsApp, setIsFromWhatsApp] = useState(false);
   
@@ -236,26 +239,60 @@ export default function VideoCall() {
     const video = videoRef.current;
 
     const processFrame = () => {
-      if (video.readyState === video.HAVE_ENOUGH_DATA && deepfakeEnabled) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
         
-        // Get frame data
-        const frameData = canvas.toDataURL('image/jpeg', 0.8);
-        
-        // Send to server for processing
-        if (socketRef.current && selectedFaceModel) {
-          socketRef.current.emit('video-frame', {
-            frameData,
-            sessionId: roomId,
-            faceModelId: selectedFaceModel,
-            voiceSettings: {
-              modelId: selectedVoiceModel,
-              intensity: voiceChangeIntensity[0],
-              enabled: !!selectedVoiceModel
+        if (ctx) {
+          // Toujours dessiner la frame de base
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          if (deepfakeEnabled && selectedFaceModel) {
+            // Appliquer l'effet deepfake visuellement
+            ctx.save();
+            
+            // Simuler la transformation faciale
+            ctx.globalAlpha = faceSwapIntensity[0] / 100;
+            ctx.fillStyle = 'rgba(100, 150, 255, 0.1)';
+            
+            // Dessiner un overlay pour simuler la transformation
+            const faceRegions = detectFaceRegions(canvas.width, canvas.height);
+            faceRegions.forEach(region => {
+              ctx.fillRect(region.x, region.y, region.width, region.height);
+            });
+            
+            // Ajouter un filigrane éducatif
+            ctx.restore();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(10, canvas.height - 30, 200, 20);
+            ctx.fillStyle = 'black';
+            ctx.font = '12px Arial';
+            ctx.fillText('ÉDUCATIF - DÉMONSTRATION', 15, canvas.height - 15);
+            
+            // Envoyer la frame transformée au serveur pour traitement
+            if (socketRef.current && realTimeProcessing) {
+              const frameData = canvas.toDataURL('image/jpeg', 0.8);
+              socketRef.current.emit('video-frame', {
+                frameData,
+                sessionId: roomId,
+                faceModelId: selectedFaceModel,
+                intensity: faceSwapIntensity[0],
+                voiceSettings: {
+                  modelId: selectedVoiceModel,
+                  intensity: voiceChangeIntensity[0],
+                  enabled: !!selectedVoiceModel
+                }
+              });
             }
-          });
+          }
+          
+          // Appliquer la frame transformée à la vidéo locale
+          if (deepfakeEnabled) {
+            const stream = canvas.captureStream(30);
+            if (videoRef.current && stream) {
+              videoRef.current.srcObject = stream;
+            }
+          }
         }
       }
       
@@ -263,6 +300,18 @@ export default function VideoCall() {
     };
 
     processFrame();
+  };
+
+  // Fonction pour détecter les régions de visage (simulation)
+  const detectFaceRegions = (width: number, height: number) => {
+    return [
+      {
+        x: width * 0.3,
+        y: height * 0.2,
+        width: width * 0.4,
+        height: height * 0.5
+      }
+    ];
   };
 
   const startCall = async () => {
@@ -511,6 +560,60 @@ export default function VideoCall() {
 
           {/* Controls Panel */}
           <div className="lg:col-span-1 space-y-6">
+            
+            {/* Connection Setup */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <UserPlus className="h-5 w-5" />
+                  Configuration d'Appel
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="roomId">ID de Salle / Code d'Appel</Label>
+                  <Input
+                    id="roomId"
+                    type="text"
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    placeholder="Ex: room123 ou code généré"
+                    disabled={isCallActive}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Numéro de Téléphone (Optionnel)</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+33 6 12 34 56 78"
+                    disabled={isCallActive}
+                  />
+                  <p className="text-xs text-slate-500">
+                    Pour les appels WhatsApp ou notifications
+                  </p>
+                </div>
+
+                {!isCallActive && (
+                  <Button
+                    onClick={() => {
+                      if (!roomId.trim()) {
+                        setRoomId(`room_${Date.now()}`);
+                      }
+                      startCall();
+                    }}
+                    className="w-full"
+                    disabled={!roomId.trim()}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    {phoneNumber ? 'Appeler le Contact' : 'Rejoindre la Salle'}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
             
             {/* Deepfake Toggle */}
             <Card>

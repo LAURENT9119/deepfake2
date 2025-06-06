@@ -64,11 +64,13 @@ export default function Home() {
               </span>
             </div>
             <nav className="hidden md:flex space-x-6">
-              <Link href="/" className="text-slate-600 hover:text-primary transition-colors">Accueil</Link>
+              <Link href="/" className="text-slate-600 hover:text-primary transition-colors font-medium text-primary">Accueil</Link>
               <Link href="/video-call" className="text-slate-600 hover:text-primary transition-colors">Appel Vidéo</Link>
-              <a href="#" className="text-slate-600 hover:text-primary transition-colors">Tutoriels</a>
-              <a href="#" className="text-slate-600 hover:text-primary transition-colors">Éthique</a>
-              <a href="#" className="text-slate-600 hover:text-primary transition-colors">Support</a>
+              <Link href="/workspace" className="text-slate-600 hover:text-primary transition-colors">Espace de Travail</Link>
+              <Link href="/tutorials" className="text-slate-600 hover:text-primary transition-colors">Tutoriels</Link>
+              <Link href="/ethics" className="text-slate-600 hover:text-primary transition-colors">Éthique</Link>
+              <Link href="/legal" className="text-slate-600 hover:text-primary transition-colors">Légal</Link>
+              <Link href="/support" className="text-slate-600 hover:text-primary transition-colors">Support</Link>
             </nav>
           </div>
         </div>
