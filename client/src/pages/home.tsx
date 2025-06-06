@@ -32,7 +32,7 @@ export default function Home() {
 
   const handleProcess = async () => {
     if (!sourceImage || !ethicsAccepted) return;
-    
+
     setProcessing(true);
     setIsProcessing(true);
     setProgress(0);
@@ -42,18 +42,18 @@ export default function Home() {
       // Upload source image
       const formData = new FormData();
       formData.append('file', sourceImage);
-      
+
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       });
-      
+
       if (!uploadResponse.ok) {
         throw new Error('Erreur lors du téléchargement');
       }
-      
+
       const uploadData = await uploadResponse.json();
-      
+
       // Simulate processing progress with realistic timing
       const interval = setInterval(() => {
         setProgress(prev => {
@@ -87,17 +87,17 @@ export default function Home() {
       }
 
       const processData = await processResponse.json();
-      
+
       // Wait for processing completion
       setTimeout(() => {
         clearInterval(interval);
         setProgress(100);
         setProcessing(false);
         setIsProcessing(false);
-        
+
         // Set a demo result image (in real implementation, this would be the processed image)
         setResultImage(`/uploads/processed_${Date.now()}.jpg`);
-        
+
         toast({
           title: "Démonstration terminée !",
           description: "Transformation deepfake appliquée avec succès",
@@ -151,13 +151,13 @@ export default function Home() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          
+
           {/* Left Sidebar - Controls */}
           <div className="lg:col-span-1">
             <Card className="sticky top-8">
               <CardContent className="p-6">
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">Paramètres</h2>
-                
+
                 <div className="space-y-4">
                   {/* Upload Sections */}
                   <div>
@@ -284,7 +284,7 @@ export default function Home() {
                   de visage et de voix en temps réel. Changez d'apparence instantanément pendant vos 
                   appels vidéo avec des célébrités ou d'autres visages.
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className="space-y-3">
                     <h3 className="font-semibold text-slate-900">Fonctionnalités Avancées:</h3>
@@ -400,14 +400,14 @@ export default function Home() {
                     </h3>
                     <p className="text-xs text-slate-600 mt-1">Guide technique complet</p>
                   </Link>
-                  
+
                   <Link href="/tutorials" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
                     <h3 className="font-medium text-slate-900 text-sm">
                       Détecter les DeepFakes
                     </h3>
                     <p className="text-xs text-slate-600 mt-1">Outils et techniques</p>
                   </Link>
-                  
+
                   <Link href="/ethics" className="block p-3 border border-slate-200 rounded-lg hover:border-primary hover:bg-primary hover:bg-opacity-5 transition-colors">
                     <h3 className="font-medium text-slate-900 text-sm">
                       Implications éthiques

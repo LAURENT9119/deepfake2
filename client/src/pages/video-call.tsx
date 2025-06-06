@@ -187,10 +187,10 @@ export default function VideoCall() {
       // Setup peer connection
       setupPeerConnection();
       
-      // Start real-time processing if enabled
-      if (realTimeProcessing) {
+      // Start real-time processing automatiquement
+      setTimeout(() => {
         startFrameProcessing();
-      }
+      }, 1000);
 
     } catch (error) {
       console.error('Error accessing media devices:', error);
@@ -253,7 +253,8 @@ export default function VideoCall() {
           // Toujours dessiner la frame de base
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           
-          if (deepfakeEnabled && selectedFaceModel) {
+          // Appliquer le deepfake si activé (avec ou sans modèle sélectionné)
+          if (deepfakeEnabled) {
             // Analyser la frame actuelle pour détecter les incohérences
             const currentFrameData = analyzeFrameCoherence(ctx, canvas.width, canvas.height);
             
@@ -284,13 +285,32 @@ export default function VideoCall() {
               applyStabilizedTransformation(ctx, region, currentFrameData);
             });
             
+            // Effet de transformation visible même sans modèle
+            if (!selectedFaceModel) {
+              // Appliquer un effet de démonstration basique
+              const centerX = canvas.width / 2;
+              const centerY = canvas.height / 2;
+              const radius = Math.min(canvas.width, canvas.height) * 0.3;
+              
+              ctx.globalAlpha = 0.3;
+              ctx.fillStyle = 'rgba(255, 100, 100, 0.2)';
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              ctx.globalAlpha = 0.8;
+              ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            }
+            
             // Ajouter un filigrane éducatif
             ctx.restore();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.fillRect(10, canvas.height - 30, 200, 20);
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = 'white';
             ctx.font = '12px Arial';
-            ctx.fillText('ÉDUCATIF - DÉMONSTRATION', 15, canvas.height - 15);
+            ctx.fillText('DEEPFAKE - DÉMONSTRATION', 15, canvas.height - 15);
             
             // Mettre à jour l'historique des frames
             updateFrameHistory(currentFrameData);
@@ -320,11 +340,21 @@ export default function VideoCall() {
             }
           }
           
-          // Appliquer la frame transformée à la vidéo locale
+          // Appliquer la frame transformée à la vidéo locale si deepfake activé
           if (deepfakeEnabled) {
-            const stream = canvas.captureStream(30);
-            if (videoRef.current && stream) {
-              videoRef.current.srcObject = stream;
+            // Rediriger la vidéo vers le canvas transformé
+            if (videoRef.current) {
+              // Créer un nouveau stream depuis le canvas
+              const stream = canvas.captureStream(30);
+              if (stream && stream.getVideoTracks().length > 0) {
+                // Remplacer le srcObject avec le stream transformé
+                videoRef.current.srcObject = stream;
+              }
+            }
+          } else {
+            // Revenir au stream original si deepfake désactivé
+            if (videoRef.current && streamRef.current) {
+              videoRef.current.srcObject = streamRef.current;
             }
           }
         }
@@ -443,13 +473,46 @@ export default function VideoCall() {
     const stabilizationFactor = calculateStabilization(frameData);
     
     ctx.globalCompositeOperation = 'source-over';
-    ctx.filter = `blur(${0.5 * stabilizationFactor}px) contrast(${1.1 - stabilizationFactor * 0.1})`;
     
-    // Appliquer la transformation avec stabilisation
-    ctx.fillStyle = `rgba(${Math.floor(200 + Math.random() * 20)}, ${Math.floor(180 + Math.random() * 20)}, ${Math.floor(170 + Math.random() * 20)}, ${0.15 * stabilizationFactor})`;
+    // Effet de transformation plus visible
+    const intensity = faceSwapIntensity[0] / 100;
+    
+    // Créer un gradient pour l'effet de visage
+    const gradient = ctx.createRadialGradient(
+      region.x + region.width / 2, region.y + region.height / 2, 0,
+      region.x + region.width / 2, region.y + region.height / 2, region.width / 2
+    );
+    
+    if (selectedFaceModel) {
+      // Couleurs selon le modèle sélectionné
+      const colors = [
+        ['rgba(255, 200, 180, ', 'rgba(240, 180, 160, '],  // Modèle 1
+        ['rgba(200, 220, 190, ', 'rgba(180, 200, 170, '],  // Modèle 2
+        ['rgba(220, 190, 200, ', 'rgba(200, 170, 180, '],  // Modèle 3
+      ];
+      const modelColors = colors[(selectedFaceModel - 1) % colors.length];
+      gradient.addColorStop(0, modelColors[0] + `${intensity * 0.4})`);
+      gradient.addColorStop(1, modelColors[1] + `${intensity * 0.2})`);
+    } else {
+      // Effet de démonstration générique
+      gradient.addColorStop(0, `rgba(100, 150, 255, ${intensity * 0.3})`);
+      gradient.addColorStop(1, `rgba(50, 100, 200, ${intensity * 0.1})`);
+    }
+    
+    ctx.fillStyle = gradient;
     ctx.fillRect(region.x, region.y, region.width, region.height);
     
-    ctx.filter = 'none';
+    // Ajouter des points de référence faciaux
+    ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.6})`;
+    ctx.beginPath();
+    // Yeux
+    ctx.arc(region.x + region.width * 0.3, region.y + region.height * 0.35, 2, 0, 2 * Math.PI);
+    ctx.arc(region.x + region.width * 0.7, region.y + region.height * 0.35, 2, 0, 2 * Math.PI);
+    // Nez
+    ctx.arc(region.x + region.width * 0.5, region.y + region.height * 0.55, 1, 0, 2 * Math.PI);
+    // Bouche
+    ctx.arc(region.x + region.width * 0.5, region.y + region.height * 0.75, 3, 0, Math.PI);
+    ctx.fill();
   };
 
   // Mettre à jour l'historique des frames
@@ -556,14 +619,14 @@ export default function VideoCall() {
     return 0.8;
   };
 
-  // Fonction pour détecter les régions de visage (simulation)
+  // Fonction pour détecter les régions de visage (simulation améliorée)
   const detectFaceRegions = (width: number, height: number) => {
     return [
       {
-        x: width * 0.3,
-        y: height * 0.2,
-        width: width * 0.4,
-        height: height * 0.5
+        x: width * 0.25,
+        y: height * 0.15,
+        width: width * 0.5,
+        height: height * 0.6
       }
     ];
   };

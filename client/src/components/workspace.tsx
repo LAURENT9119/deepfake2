@@ -113,7 +113,7 @@ export function Workspace({ sourceImage, targetImage, processing, progress, isPr
                 <div className="space-y-3">
                   <div className="relative">
                     <img
-                      src={sourceImage ? URL.createObjectURL(sourceImage) : '/placeholder.jpg'}
+                      src={resultImage || (sourceImage ? URL.createObjectURL(sourceImage) : '/placeholder.jpg')}
                       alt="Résultat"
                       className="w-full h-48 object-cover rounded-lg border-2 border-purple-300"
                     />
@@ -123,6 +123,13 @@ export function Workspace({ sourceImage, targetImage, processing, progress, isPr
                         🎭 DEEPFAKE APPLIQUÉ
                       </div>
                     </div>
+                    {resultImage && (
+                      <div className="absolute top-2 right-2">
+                        <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                          ✓ TERMINÉ
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1">
