@@ -43,7 +43,7 @@ export default function VideoCall() {
   const socketRef = useRef<any>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  
+
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isCallActive, setIsCallActive] = useState(false);
@@ -51,7 +51,7 @@ export default function VideoCall() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [userId] = useState(Math.random().toString(36).substr(2, 9));
   const [isFromWhatsApp, setIsFromWhatsApp] = useState(false);
-  
+
   // Deepfake settings
   const [selectedFaceModel, setSelectedFaceModel] = useState<number | null>(null);
   const [selectedVoiceModel, setSelectedVoiceModel] = useState<number | null>(null);
@@ -84,7 +84,7 @@ export default function VideoCall() {
     if (sessionParam) {
       setRoomId(sessionParam);
       setIsFromWhatsApp(true);
-      
+
       if (deepfakeParam === 'true') {
         setDeepfakeEnabled(true);
       }
@@ -104,7 +104,7 @@ export default function VideoCall() {
 
     initializeMedia();
     initializeSocket();
-    
+
     return () => {
       cleanup();
     };
@@ -112,7 +112,7 @@ export default function VideoCall() {
 
   const initializeSocket = () => {
     socketRef.current = io(window.location.origin);
-    
+
     socketRef.current.on('user-connected', (userId: string) => {
       toast({
         title: "Utilisateur connecté",
@@ -178,7 +178,7 @@ export default function VideoCall() {
           autoGainControl: true
         }
       });
-      
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -186,7 +186,7 @@ export default function VideoCall() {
 
       // Setup peer connection
       setupPeerConnection();
-      
+
       // Start real-time processing automatiquement
       setTimeout(() => {
         startFrameProcessing();
@@ -248,111 +248,41 @@ export default function VideoCall() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
-        
+
         if (ctx) {
           // Toujours dessiner la frame de base
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          // Appliquer le deepfake avec IA temps réel si activé
+
+          // Appliquer le deepfake immédiatement si activé
           if (deepfakeEnabled) {
-            // Utiliser l'IA TensorFlow.js pour la détection précise
-            video.addEventListener('loadeddata', async () => {
-              if (video.readyState >= 2) {
-                try {
-                  const detectionResult = await FaceUtils.detectFacesFromVideo(video);
-                  
-                  if (detectionResult.landmarks.length > 0) {
-                    // Appliquer la transformation deepfake avec l'IA
-                    FaceUtils.applyRealTimeDeepfake(ctx, detectionResult.landmarks, selectedFaceModel, {
-                      enableBlinkStabilization: true,
-                      enableLightingAdaptation: true,
-                      enableLipSync: true,
-                      transformationIntensity: faceTransformationIntensity[0] / 100
-                    });
-                    
-                    // Effet de confirmation visuelle
-                    ctx.strokeStyle = '#00ff00';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Indicateur de performance temps réel
-                    ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
-                    ctx.fillRect(10, 10, 200, 25);
-                    ctx.fillStyle = 'black';
-                    ctx.font = '12px Arial';
-                    ctx.fillText(`🤖 IA: ${Math.round(detectionResult.frameRate)}fps`, 15, 27);
-                  }
-                } catch (error) {
-                  console.error('Erreur traitement IA temps réel:', error);
-                  // Fallback vers traitement basique
-                  applyBasicDeepfakeEffect(ctx, canvas.width, canvas.height);
-                }
-              }
-            });
-            
-            // Appliquer transformation immédiate pour feedback visuel
-            applyBasicDeepfakeEffect(ctx, canvas.width, canvas.height);alAlpha = faceSwapIntensity[0] / 100;
-            
+            // Effet de transformation IMMÉDIAT et VISIBLE
+            applyImmediateDeepfakeTransformation(ctx, canvas.width, canvas.height);
+
+            // Détecter et transformer les régions de visage
             const faceRegions = detectFaceRegions(canvas.width, canvas.height);
+            const transformAlpha = faceSwapIntensity[0] / 100;
+
             faceRegions.forEach(region => {
-              applyStabilizedTransformation(ctx, region, currentFrameData);
+              applyVisibleFaceTransformation(ctx, region, transformAlpha, selectedFaceModel);
             });
-            
-            // Effet de transformation visible même sans modèle
-            if (!selectedFaceModel) {
-              // Appliquer un effet de démonstration plus visible
-              const centerX = canvas.width / 2;
-              const centerY = canvas.height / 2;
-              const radius = Math.min(canvas.width, canvas.height) * 0.3;
-              
-              // Effet de teinte colorée sur tout le visage
-              ctx.globalAlpha = 0.4;
-              ctx.fillStyle = `hsl(${Date.now() / 20 % 360}, 60%, 70%)`;
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-              ctx.fill();
-              
-              // Contour animé
-              ctx.globalAlpha = 1.0;
-              ctx.strokeStyle = `hsl(${Date.now() / 10 % 360}, 80%, 50%)`;
-              ctx.lineWidth = 3;
-              ctx.stroke();
-              
-              // Points de repère faciaux animés
-              ctx.fillStyle = `hsl(${Date.now() / 30 % 360}, 100%, 80%)`;
-              const pulse = Math.sin(Date.now() / 200) * 2 + 4;
-              // Yeux
-              ctx.beginPath();
-              ctx.arc(centerX - 60, centerY - 40, pulse, 0, 2 * Math.PI);
-              ctx.arc(centerX + 60, centerY - 40, pulse, 0, 2 * Math.PI);
-              ctx.fill();
-            } else {
-              // Transformation avec modèle sélectionné
-              const centerX = canvas.width / 2;
-              const centerY = canvas.height / 2;
-              const radius = Math.min(canvas.width, canvas.height) * 0.35;
-              
-              // Couleurs selon le modèle
-              const modelColors = [
-                [255, 200, 180],  // Modèle 1 - Teinte chaude
-                [200, 220, 255],  // Modèle 2 - Teinte froide
-                [220, 255, 200],  // Modèle 3 - Teinte verte
-              ];
-              const [r, g, b] = modelColors[(selectedFaceModel - 1) % modelColors.length];
-              
-              ctx.globalAlpha = faceSwapIntensity[0] / 100 * 0.6;
-              ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-              ctx.fill();
-              
-              // Effet de morphing du visage
-              ctx.globalAlpha = 0.8;
-              ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
-              ctx.lineWidth = 2;
-              ctx.stroke();
+
+            // Essayer d'utiliser l'IA pour une transformation plus précise (asynchrone)
+            if (FaceUtils && typeof FaceUtils.detectFacesFromVideo === 'function') {
+              FaceUtils.detectFacesFromVideo(video).then(detectionResult => {
+                if (detectionResult.landmarks.length > 0) {
+                  // Améliorer la transformation avec l'IA
+                  FaceUtils.applyRealTimeDeepfake(ctx, detectionResult.landmarks, selectedFaceModel, {
+                    enableBlinkStabilization: true,
+                    enableLightingAdaptation: true,
+                    enableLipSync: true,
+                    transformationIntensity: transformAlpha
+                  });
+                }
+              }).catch(error => {
+                console.log('IA non disponible, utilisation du mode simulation');
+              });
             }
-            
+
             // Ajouter un filigrane éducatif
             ctx.restore();
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -360,11 +290,11 @@ export default function VideoCall() {
             ctx.fillStyle = 'white';
             ctx.font = '12px Arial';
             ctx.fillText('DEEPFAKE - DÉMONSTRATION', 15, canvas.height - 15);
-            
+
             // Mettre à jour l'historique des frames
             updateFrameHistory(currentFrameData);
             setLastFaceData(currentFrameData);
-            
+
             // Envoyer la frame transformée au serveur pour traitement
             if (socketRef.current && realTimeProcessing) {
               const frameData = canvas.toDataURL('image/jpeg', 0.8);
@@ -388,23 +318,34 @@ export default function VideoCall() {
               });
             }
           }
-          
-          // Forcer l'affichage du canvas transformé par dessus la vidéo
+
+          // FORCER l'affichage du canvas transformé immédiatement
           if (deepfakeEnabled && canvasRef.current) {
-            canvasRef.current.style.display = 'block';
-            canvasRef.current.style.position = 'absolute';
-            canvasRef.current.style.top = '0';
-            canvasRef.current.style.left = '0';
-            canvasRef.current.style.width = '100%';
-            canvasRef.current.style.height = '100%';
-            canvasRef.current.style.zIndex = '10';
-            canvasRef.current.style.pointerEvents = 'none';
+            const canvas = canvasRef.current;
+            canvas.style.display = 'block';
+            canvas.style.position = 'absolute';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.zIndex = '10';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.opacity = '1';
+
+            // S'assurer que le canvas est visible
+            if (canvas.getContext('2d')) {
+              const ctx = canvas.getContext('2d')!;
+              // Redessiner immédiatement pour garantir la visibilité
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              applyImmediateDeepfakeTransformation(ctx, canvas.width, canvas.height);
+            }
           } else if (canvasRef.current) {
             canvasRef.current.style.display = 'none';
+            canvasRef.current.style.opacity = '0';
           }
         }
       }
-      
+
       requestAnimationFrame(processFrame);
     };
 
@@ -415,12 +356,12 @@ export default function VideoCall() {
   const applyBasicDeepfakeEffect = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     // Effet deepfake basique pour feedback immédiat
     ctx.save();
-    
+
     // Overlay avec effet de transformation
     ctx.globalAlpha = 0.15;
     ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
     ctx.fillRect(0, 0, width, height);
-    
+
     // Filigrane de confirmation
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
@@ -428,13 +369,13 @@ export default function VideoCall() {
     ctx.fillStyle = 'black';
     ctx.font = 'bold 12px Arial';
     ctx.fillText('🎭 DEEPFAKE ACTIF', 15, 27);
-    
+
     ctx.restore();
   };
 
   const analyzeFrameCoherence = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     const imageData = ctx.getImageData(0, 0, width, height);
-    
+
     return {
       timestamp: Date.now(),
       eyeState: detectEyeState(imageData),
@@ -449,11 +390,11 @@ export default function VideoCall() {
   const stabilizeBlinking = (ctx: CanvasRenderingContext2D, frameData: any) => {
     const naturalBlinkRate = 15; // clignements par minute
     const currentTime = Date.now();
-    
+
     // Calculer le timing naturel de clignement
     const timeSinceLastBlink = currentTime - blinkTimer;
     const shouldBlink = timeSinceLastBlink > (60000 / naturalBlinkRate) * (0.8 + Math.random() * 0.4);
-    
+
     if (shouldBlink) {
       // Appliquer un clignement naturel
       applyNaturalBlink(ctx, frameData);
@@ -467,16 +408,16 @@ export default function VideoCall() {
   // Corriger l'asymétrie faciale
   const correctFacialAsymmetry = (ctx: CanvasRenderingContext2D, frameData: any) => {
     if (!frameData.facialSymmetry) return;
-    
+
     const symmetryThreshold = 0.85;
     if (frameData.facialSymmetry.score < symmetryThreshold) {
       // Appliquer des corrections subtiles pour améliorer la symétrie
       ctx.save();
-      
+
       // Correction des asymétries mineures
       const corrections = calculateSymmetryCorrections(frameData.facialSymmetry);
       applySymmetryCorrections(ctx, corrections);
-      
+
       ctx.restore();
     }
   };
@@ -484,18 +425,18 @@ export default function VideoCall() {
   // Lisser les contours du visage
   const smoothFaceContours = (ctx: CanvasRenderingContext2D, frameData: any) => {
     if (!frameData.faceContours || !lastFaceData?.faceContours) return;
-    
+
     // Interpolation des contours entre les frames pour éviter les saccades
     const smoothedContours = interpolateContours(
       lastFaceData.faceContours,
       frameData.faceContours,
       0.3 // facteur de lissage
     );
-    
+
     // Appliquer un filtre anti-aliasing avancé
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    
+
     // Redessiner les contours lissés
     applySmoothedContours(ctx, smoothedContours);
   };
@@ -506,10 +447,10 @@ export default function VideoCall() {
       setLightingReference(frameData.lightingProfile);
       return;
     }
-    
+
     // Calculer les ajustements d'éclairage graduels
     const lightingDelta = calculateLightingDelta(lightingReference, frameData.lightingProfile);
-    
+
     // Appliquer des ajustements progressifs pour éviter les changements brusques
     if (lightingDelta.intensity > 0.1) {
       applyGradualLightingAdjustment(ctx, lightingDelta);
@@ -519,13 +460,13 @@ export default function VideoCall() {
   // Synchroniser les mouvements de lèvres
   const synchronizeLipMovements = (ctx: CanvasRenderingContext2D, frameData: any) => {
     if (!frameData.lipPosition || !lastFaceData?.lipPosition) return;
-    
+
     // Calculer la différence de position des lèvres
     const lipMovement = calculateLipMovement(lastFaceData.lipPosition, frameData.lipPosition);
-    
+
     // Appliquer un lissage temporel pour éviter les mouvements saccadés
     const smoothedLipPosition = applySmoothingToLipMovement(lipMovement);
-    
+
     // Synchroniser avec l'audio si disponible
     if (selectedVoiceModel) {
       synchronizeWithAudio(ctx, smoothedLipPosition);
@@ -536,18 +477,18 @@ export default function VideoCall() {
   const applyStabilizedTransformation = (ctx: CanvasRenderingContext2D, region: any, frameData: any) => {
     // Utiliser les données de cohérence pour une transformation plus stable
     const stabilizationFactor = calculateStabilization(frameData);
-    
+
     ctx.globalCompositeOperation = 'source-over';
-    
+
     // Effet de transformation plus visible
     const intensity = faceSwapIntensity[0] / 100;
-    
+
     // Créer un gradient pour l'effet de visage
     const gradient = ctx.createRadialGradient(
       region.x + region.width / 2, region.y + region.height / 2, 0,
       region.x + region.width / 2, region.y + region.height / 2, region.width / 2
     );
-    
+
     if (selectedFaceModel) {
       // Couleurs selon le modèle sélectionné
       const colors = [
@@ -563,10 +504,10 @@ export default function VideoCall() {
       gradient.addColorStop(0, `rgba(100, 150, 255, ${intensity * 0.3})`);
       gradient.addColorStop(1, `rgba(50, 100, 200, ${intensity * 0.1})`);
     }
-    
+
     ctx.fillStyle = gradient;
     ctx.fillRect(region.x, region.y, region.width, region.height);
-    
+
     // Ajouter des points de référence faciaux
     ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.6})`;
     ctx.beginPath();
@@ -707,7 +648,7 @@ export default function VideoCall() {
     }
 
     setIsCallActive(true);
-    
+
     // Join room via socket
     socketRef.current.emit('join-room', roomId, userId);
 
@@ -726,7 +667,7 @@ export default function VideoCall() {
 
   const endCall = () => {
     setIsCallActive(false);
-    
+
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       setupPeerConnection();
@@ -765,14 +706,14 @@ export default function VideoCall() {
   const handleFaceModelChange = (modelId: string) => {
     const id = parseInt(modelId);
     setSelectedFaceModel(id);
-    
+
     // Activer automatiquement le deepfake
     setDeepfakeEnabled(true);
-    
+
     // Forcer le redémarrage du traitement avec effet immédiat
     setTimeout(() => {
       startFrameProcessing();
-      
+
       // Effet visuel immédiat pour confirmer l'activation
       if (canvasRef.current && videoRef.current) {
         const canvas = canvasRef.current;
@@ -786,7 +727,7 @@ export default function VideoCall() {
           canvas.style.height = '100%';
           canvas.style.zIndex = '10';
           canvas.style.pointerEvents = 'none';
-          
+
           // Effet flash pour confirmer l'activation
           ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -796,7 +737,7 @@ export default function VideoCall() {
         }
       }
     }, 50);
-    
+
     if (socketRef.current && isCallActive) {
       socketRef.current.emit('face-model-changed', {
         roomId,
@@ -813,7 +754,7 @@ export default function VideoCall() {
   const handleVoiceModelChange = (modelId: string) => {
     const id = parseInt(modelId);
     setSelectedVoiceModel(id);
-    
+
     if (socketRef.current && isCallActive) {
       socketRef.current.emit('voice-model-changed', {
         roomId,
@@ -839,6 +780,71 @@ export default function VideoCall() {
     }
   };
 
+  // Fonction pour appliquer une transformation Deepfake immédiate (effet visible)
+  const applyImmediateDeepfakeTransformation = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    // Couleurs pour l'effet (modifiable selon les préférences)
+    const primaryColor = 'rgba(100, 255, 150, 0.3)'; // Vert clair
+    const secondaryColor = 'rgba(50, 200, 100, 0.2)'; // Vert plus foncé
+    const textColor = 'rgba(0, 0, 0, 0.8)'; // Noir discret
+    const textBackgroundColor = 'rgba(150, 255, 200, 0.9)'; // Vert clair semi-transparent
+
+    // Appliquer un rectangle semi-transparent pour un effet visuel
+    ctx.fillStyle = primaryColor;
+    ctx.fillRect(0, 0, width, height);
+
+    // Ajouter un contour subtil
+    ctx.strokeStyle = secondaryColor;
+    ctx.lineWidth = 5;
+    ctx.strokeRect(0, 0, width, height);
+
+    // Ajouter un filigrane discret
+    ctx.fillStyle = textBackgroundColor;
+    ctx.fillRect(10, height - 30, 220, 25);
+    ctx.fillStyle = textColor;
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('✨DEEPFAKE ACTIVÉ✨', 15, height - 10);
+  };
+
+  // Fonction pour appliquer une transformation visible sur les régions du visage
+  const applyVisibleFaceTransformation = (ctx: CanvasRenderingContext2D, region: any, transformAlpha: number, selectedFaceModel: number | null) => {
+    // Définir les couleurs de base
+    let primaryColor = `rgba(150, 200, 255, ${transformAlpha * 0.3})`; // Bleu clair par défaut
+    let secondaryColor = `rgba(100, 150, 200, ${transformAlpha * 0.2})`; // Bleu foncé par défaut
+
+    // Modifier les couleurs si un modèle de visage est sélectionné
+    if (selectedFaceModel) {
+      switch (selectedFaceModel) {
+        case 1: // Modèle 1 : Teintes chaudes
+          primaryColor = `rgba(255, 200, 150, ${transformAlpha * 0.3})`;
+          secondaryColor = `rgba(240, 180, 100, ${transformAlpha * 0.2})`;
+          break;
+        case 2: // Modèle 2 : Teintes froides
+          primaryColor = `rgba(150, 200, 255, ${transformAlpha * 0.3})`;
+          secondaryColor = `rgba(100, 150, 200, ${transformAlpha * 0.2})`;
+          break;
+        case 3: // Modèle 3 : Teintes neutres
+          primaryColor = `rgba(200, 200, 200, ${transformAlpha * 0.3})`;
+          secondaryColor = `rgba(150, 150, 150, ${transformAlpha * 0.2})`;
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Créer un effet de superposition colorée
+    ctx.fillStyle = primaryColor;
+    ctx.fillRect(region.x, region.y, region.width, region.height);
+
+    // Ajouter des points de repère pour un effet amélioré
+    ctx.fillStyle = secondaryColor;
+    ctx.beginPath();
+    ctx.arc(region.x + region.width * 0.3, region.y + region.height * 0.4, 3, 0, 2 * Math.PI); // Oeil gauche
+    ctx.arc(region.x + region.width * 0.7, region.y + region.height * 0.4, 3, 0, 2 * Math.PI); // Oeil droit
+    ctx.arc(region.x + region.width * 0.5, region.y + region.height * 0.7, 4, 0, Math.PI); // Bouche
+    ctx.closePath();
+    ctx.fill();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -860,9 +866,9 @@ export default function VideoCall() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Appel Vidéo Deepfake</h1>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          
+
           {/* Video Area */}
           <div className="lg:col-span-3">
             <Card>
@@ -936,7 +942,7 @@ export default function VideoCall() {
                     className="px-3 py-2 border rounded-lg"
                     disabled={isCallActive}
                   />
-                  
+
                   <Button
                     onClick={toggleVideo}
                     variant={isVideoEnabled ? "outline" : "destructive"}
@@ -977,7 +983,7 @@ export default function VideoCall() {
 
           {/* Controls Panel */}
           <div className="lg:col-span-1 space-y-6">
-            
+
             {/* Connection Setup */}
             <Card>
               <CardHeader>
@@ -998,7 +1004,7 @@ export default function VideoCall() {
                     disabled={isCallActive}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Numéro de Téléphone (Optionnel)</Label>
                   <Input
@@ -1031,7 +1037,7 @@ export default function VideoCall() {
                 )}
               </CardContent>
             </Card>
-            
+
             {/* Deepfake Toggle */}
             <Card>
               <CardHeader>
@@ -1046,44 +1052,56 @@ export default function VideoCall() {
                   <Switch
                     checked={deepfakeEnabled}
                     onCheckedChange={(checked) => {
-                      setDeepfakeEnabled(checked);
-                      if (checked) {
-                        toast({
-                          title: "🎭 Deepfake ACTIVÉ !",
-                          description: "Transformation IMMÉDIATE ! Regardez votre vidéo !",
-                        });
-                        
-                        // Effet immédiat et visible
-                        setTimeout(() => {
-                          startFrameProcessing();
-                          
-                          // Flash vert pour confirmer l'activation
-                          if (canvasRef.current) {
-                            const canvas = canvasRef.current;
-                            const ctx = canvas.getContext('2d');
-                            canvas.style.display = 'block';
-                            if (ctx) {
-                              ctx.fillStyle = 'rgba(0, 255, 100, 0.4)';
-                              ctx.fillRect(0, 0, canvas.width, canvas.height);
-                              setTimeout(() => {
-                                startFrameProcessing();
-                              }, 300);
-                            }
-                          }
-                        }, 50);
-                      } else {
-                        toast({
-                          title: "Deepfake désactivé",
-                          description: "Affichage normal restauré",
-                        });
-                        if (canvasRef.current) {
-                          canvasRef.current.style.display = 'none';
+                    setDeepfakeEnabled(checked);
+                    if (checked) {
+                      toast({
+                        title: "🎭 DEEPFAKE ACTIVÉ !",
+                        description: "Votre visage va changer MAINTENANT !",
+                      });
+
+                      // ACTIVATION IMMÉDIATE avec effet visible garanti
+                      if (canvasRef.current && videoRef.current) {
+                        const canvas = canvasRef.current;
+                        const video = videoRef.current;
+                        const ctx = canvas.getContext('2d');
+
+                        // Forcer l'affichage immédiat
+                        canvas.style.display = 'block';
+                        canvas.style.position = 'absolute';
+                        canvas.style.top = '0';
+                        canvas.style.left = '0';
+                        canvas.style.width = '100%';
+                        canvas.style.height = '100%';
+                        canvas.style.zIndex = '10';
+                        canvas.style.pointerEvents = 'none';
+                        canvas.style.opacity = '1';
+
+                        if (ctx && video.videoWidth > 0) {
+                          canvas.width = video.videoWidth || 640;
+                          canvas.height = video.videoHeight || 480;
+
+                          // Dessiner immédiatement la transformation
+                          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                          applyImmediateDeepfakeTransformation(ctx, canvas.width, canvas.height);
+
+                          // Démarrer le traitement continu
+                          setTimeout(() => startFrameProcessing(), 100);
                         }
                       }
-                    }}
+                    } else {
+                      toast({
+                        title: "Deepfake désactivé",
+                        description: "Retour à l'affichage normal",
+                      });
+                      if (canvasRef.current) {
+                        canvasRef.current.style.display = 'none';
+                        canvasRef.current.style.opacity = '0';
+                      }
+                    }
+                  }}
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Traitement temps réel</span>
                   <Switch
